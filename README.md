@@ -1,3 +1,5 @@
+<img src="./pictures/library-banner-728x360.jpg" width="728" height="360" alt="[Library banner]">
+
 [![license](http://img.shields.io/github/license/schmouk/CyclingRankingsLib.svg?style=plastic&labelColor=blueviolet&color=lightblue)](https://github.com/schmouk/pythonic-cpp-strings/license)  [![Latest release](http://img.shields.io/github/release/schmouk/CyclingRankingLibs.svg?style=plastic&labelColor=blueviolet&color=success)](https://github.com/schmouk/CyclingRankingsLib/releases)  [![current_devs](https://img.shields.io/badge/current_devs-onprogress-fail?style=plastic&labelColor=blueviolet)]() [![code_coverage](https://img.shields.io/badge/code_coverage-onprogress-success?style=plastic&labelColor=blueviolet)]()  [![tests](https://img.shields.io/badge/tests-onprogress-fail?style=plastic&labelColor=blueviolet)]()
 
 # CyclingRankingsLib
