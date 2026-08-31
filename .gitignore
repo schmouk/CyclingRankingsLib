@@ -1,0 +1,12 @@
+#--- This Library Specifics ---
+archive
+
+#--- Visual Sudio ---
+.vs
+Debug
+Release
+x64
+x86
+
+#--- Python ---
+__pycache__
