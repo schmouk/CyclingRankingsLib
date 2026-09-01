@@ -3,5 +3,6 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
+  <Project Path="../cpp-tests/cpp-tests.vcxproj" />
   <Project Path="cpp.vcxproj" />
 </Solution>
