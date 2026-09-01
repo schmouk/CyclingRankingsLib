@@ -70,11 +70,14 @@ So, some library components are grouped into package `commons` - e.g. riders ide
 
 Next subsections provide minimalist specifications of the main library components
 
-### 4.1 Identifiers
+### 4.1 Identifiers and Ranks
+
+### 4.1.1 Identifiers
 Riders and Teams are uniquely identified by integer numbers. **Cycling Rankings Library** does not manage names. Calling application provide numerical identifiers of their own. It is their responsibility to internally associate names and any other related information with these identifiers - that they may choose as they wish.
 
 For some other classifications, identifiers for stages or for climbs may be needed. These identifiers are also integers. For stages, KOMS or intermediate sprint, these identifiers should get their values in ascending order along the courses of the overall race. It is the responsibility of the calling application to ensure these requirements.
 
+### 4.1.2 Ranks
 Ranks are coded in (signed) integers. Correct ranks start at 1 and are all increasing in ascending order except for a special case: ties. In case of ties, a same rank may be duplicated. For `r_t` the rank value of the tie and `n` the number of ties, n ranks get value `r_t` and the next one gets value `r_t + n`.  
 Three special cases are also used and may be duplicated for a same ranking:
 - Not Starting opponents' rank is denoted DNS (Did Not Start); DNS = 0;
@@ -99,6 +102,8 @@ Points are positive values. They are associated with ranks and riders/teams iden
 
 ### 4.5 Penalties
 It may happen that time and/or points penalties are imposed to competitors (riders or teams). Time penalties are provided as positive values. Points penalties are set as negative values.
+
+Notice: When a rider or a team gets a negative overall score, its identifier and its score are inserted in a general classification at the very end of the classification, ordered in descending order on the score values, and associated with a specific rank value: 0. This is a very specific case dedicated to general classifications. It has not to be confused with the DNS value for ranks as specified in subsection 4.1.2.
 
 ### 4.6 General classifications
 **Cycling Rankings Library** does not store any general classification. For these to be modified by the library, calling application must provide the actual state of the general classification to be modified plus the rankings and performances associated with riders/teams identifiers for the actual modifying ranking. The calling application gets back the modified general classification.
