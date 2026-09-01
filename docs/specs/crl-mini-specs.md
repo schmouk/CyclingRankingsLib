@@ -128,10 +128,17 @@ Some events lead to the organization of heats, repechage rounds, quarter of fina
 
 These composition heats are set according to the known rules of competition. These rules may have evolved over time. They will eventually keep on evolving over time also. The implemented rules in **Cycling Rankings Library** are clearly documented. The associated algorithms are clearly documented also. The calling applications may specify a year value to get the specific form of the algorithm associated with this year for a same competition event type (e.g. Track Sprint event).
 
-### 4.10 Randomness
+### 4.10 Utilities
+**Cycling Rankings Library** implements some useful utilities that are not immediately related to rankings. They are shortly listed in this section.
+
+#### 4.10.1 Randomness
 When time comes for randomness, for instance for compositing heats, or as an helper for digital simulations (see examples below) **Cycling Rankings Library** implements the *PCG XSH RS 64/32 (LCG)* algorithm (see reference [1] at end of this document).
 
 The interface with the pseudo-random numbers generator is simple and well described. The calling applications may ask for random generation at any time. They may provide also a specific seed to repeat "random" series (for tests purpose). Finally, some specific applications may use it to simulate dices rolls, for the usage of board games for instance.
+
+#### 4.10.2 Average speed
+When providing a distance (in kilometers or in miles, may be with a fraction added to it) and a time with its precision (hh:mm, hh:mm:ss, hh:mm:ss.frc), a **Cycling Rankings Library** returns the related average speed in km/h or in mph with a fractional value precision adapted to the precision of the provided time. The precision of the fractional part of the average speed contains up to three digits and the number of digits (0, 1, 2 or 3) is adapted to the precision of the provided time: the better the time rpecision, the better the average speed precision.  
+The returned value is a string.
 
 
 ## 5. References
