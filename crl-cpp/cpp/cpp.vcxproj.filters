@@ -18,9 +18,21 @@
     <ClInclude Include="framework.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="commons\types.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="commons\teams.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="commons\time.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cpp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="commons\time.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

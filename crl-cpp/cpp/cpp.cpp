@@ -3,6 +3,9 @@
 
 #include "framework.h"
 
+#include "commons/types.h"
+
+
 // TODO: This is an example of a library function, just used for testing first implementations
 void tests_cpp()
 {

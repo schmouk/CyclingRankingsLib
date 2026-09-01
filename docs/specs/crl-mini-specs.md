@@ -80,11 +80,11 @@ For some other classifications, identifiers for stages or for climbs may be need
 ### 4.1.2 Ranks
 Ranks are coded in (signed) integers. Correct ranks start at 1 and are all increasing in ascending order except for a special case: ties. In case of ties, a same rank may be duplicated. For `r_t` the rank value of the tie and `n` the number of ties, n ranks get value `r_t` and the next one gets value `r_t + n`.  
 Three special cases are also used and may be duplicated for a same ranking:
-- Not Starting opponents' rank is denoted DNS (Did Not Start); DNS = 0;
-- Not Finishing opponents' rank is denoted DNF (Did Not Finished); DNF = -1;
-- Disqualified opponents' rank is denoted DSQ (DiSQualified); DSQ = -2.
+- Not Starting competitors' rank is denoted DNS (Did Not Start); DNS = 0;
+- Not Finishing competitors' rank is denoted DNF (Did Not Finished); DNF = -1;
+- Disqualified competitors' rank is denoted DSQ (DiSQualified); DSQ = -2.
 
-Calling applications must ensure the correct use of these conventions. The library will apply then the correct algorithms and remove opponents when needed from the returned general classification.
+Calling applications must ensure the correct use of these conventions. The library will apply then the correct algorithms and remove competitors when needed from the returned general classification.
 
 ### 4.2 Teams composition
 When teams classification enters the game, whatever the underlying mode of classification (adding times, ranks or points), teams compositions are provided by the calling application as lists of riders identifiers or as CSV lines.
@@ -103,7 +103,7 @@ Points are positive values. They are associated with ranks and riders/teams iden
 ### 4.5 Penalties
 It may happen that time and/or points penalties are imposed to competitors (riders or teams). Time penalties are provided as positive values. Points penalties are set as negative values.
 
-Notice: When a rider or a team gets a negative overall score, its identifier and its score are inserted in a general classification at the very end of the classification, ordered in descending order on the score values, and associated with a specific rank value: 0. This is a very specific case dedicated to general classifications. It has not to be confused with the DNS value for ranks as specified in subsection 4.1.2.
+Notice: When a rider or a team gets a zero or negative overall score, its identifier and its score are inserted in a general classification at the very end of the classification, ordered in descending order on the score values, and associated with a specific rank value: 0. This is a very specific case dedicated to general classifications. It has not to be confused with the DNS value for ranks as specified in subsection 4.1.2.
 
 ### 4.6 General classifications
 **Cycling Rankings Library** does not store any general classification. For these to be modified by the library, calling application must provide the actual state of the general classification to be modified plus the rankings and performances associated with riders/teams identifiers for the actual modifying ranking. The calling application gets back the modified general classification.
