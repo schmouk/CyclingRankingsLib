@@ -12,10 +12,11 @@
 #include <cmath>
 #include <cstdint>
 #include <format>
+#include <limits>
 #include <string>
 
 #include "./time.h"
-#include "./types.h"
+
 
 namespace crl
 {
@@ -172,9 +173,31 @@ namespace crl
     }
 
     //---------------------------------------------------------
+    Time::operator long() noexcept
+    {
+        if (_seconds <= std::numeric_limits<long>::max()) {
+            return static_cast<long>(_seconds);
+        }
+        else {
+            _error_msg = std::format(
+                "{} is a too big time value to be converted to a long integer, forced to {}",
+                _seconds,
+                std::numeric_limits<long>::max()
+            );
+            return std::numeric_limits<long>::max();
+        }
+    }
+
+    //---------------------------------------------------------
+    Time::operator unsigned long() const noexcept
+    {
+        return static_cast<unsigned long>(_seconds);
+    }
+
+    //---------------------------------------------------------
     Time::operator double() const noexcept
     {
-        return _seconds + double(_fraction);
+        return static_cast<double>(_seconds) + static_cast<double>(_fraction);
     }
 
     //---------------------------------------------------------

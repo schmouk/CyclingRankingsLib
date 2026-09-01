@@ -13,8 +13,7 @@
 
 #include <cstdint>
 #include <string>
-
-#include "./types.h"
+#include <string_view>
 
 
 namespace crl
@@ -46,12 +45,14 @@ namespace crl
         //-----   Constructors / Destructor   -----------------
         Time(const std::uint16_t h, const std::uint8_t m, const std::uint8_t s, const SecondFraction frac) noexcept;
         Time(const std::uint16_t h, const std::uint8_t m, const std::uint8_t s) noexcept;
-        Time(const std::uint8_t m, const std::uint8_t s, const SecondFraction frac) noexcept;
-        Time(const std::uint8_t m, const std::uint8_t s) noexcept;
-        Time(const std::uint8_t s, const SecondFraction frac) noexcept;
+        Time(const std::uint8_t  m, const std::uint8_t s, const SecondFraction frac) noexcept;
+        Time(const std::uint8_t  m, const std::uint8_t s) noexcept;
+        Time(const std::uint8_t  s, const SecondFraction frac) noexcept;
         explicit Time(const unsigned int s) noexcept;
 
-        explicit Time(const double time, const int precision = 0) noexcept;  // most values for precision: 0, 5, 10, 100, 1000
+        explicit Time(const double time, const int precision = 0) noexcept;  // mostly used values for precision: 0, 5, 10, 100, 1000
+
+        explicit Time(std::string_view time) noexcept;
 
         virtual ~Time() noexcept = default;
 
@@ -68,6 +69,8 @@ namespace crl
 
 
         //-----   Operators   ---------------------------------
+        operator long() noexcept;
+        operator unsigned long() const noexcept;
         operator double() const noexcept;
         operator std::string() const noexcept;
 
