@@ -72,7 +72,16 @@ Next subsections provide minimalist specifications of the main library component
 
 ### 4.1 Identifiers
 Riders and Teams are uniquely identified by integer numbers. **Cycling Rankings Library** does not manage names. Calling application provide numerical identifiers of their own. It is their responsibility to internally associate names and any other related information with these identifiers - that they may choose as they wish.
+
 For some other classifications, identifiers for stages or for climbs may be needed. These identifiers are also integers. For stages, KOMS or intermediate sprint, these identifiers should get their values in ascending order along the courses of the overall race. It is the responsibility of the calling application to ensure these requirements.
+
+Ranks are coded in (signed) integers. Correct ranks start at 1 and are all increasing in ascending order except for a special case: ties. In case of ties, a same rank may be duplicated. For `r_t` the rank value of the tie and `n` the number of ties, n ranks get value `r_t` and the next one gets value `r_t + n`.  
+Three special cases are also used and may be duplicated for a same ranking:
+- Not Starting opponents' rank is denoted DNS (Did Not Start); DNS = 0;
+- Not Finishing opponents' rank is denoted DNF (Did Not Finished); DNF = -1;
+- Disqualified opponents' rank is denoted DSQ (DiSQualified); DSQ = -2.
+
+Calling applications must ensure the correct use of these conventions. The library will apply then the correct algorithms and remove opponents when needed from the returned general classification.
 
 ### 4.2 Teams composition
 When teams classification enters the game, whatever the underlying mode of classification (adding times, ranks or points), teams compositions are provided by the calling application as lists of riders identifiers or as CSV lines.
