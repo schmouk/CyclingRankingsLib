@@ -11,6 +11,7 @@
     <OutputPath>.</OutputPath>
     <Name>crl-python</Name>
     <RootNamespace>crl-python</RootNamespace>
+    <InterpreterId>Global|VisualStudio|Python3.14.6</InterpreterId>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -21,7 +22,19 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="commons\teams.py" />
+    <Compile Include="commons\time.py" />
+    <Compile Include="commons\types.py" />
+    <Compile Include="commons\__init__.py" />
     <Compile Include="crl_python.py" />
+    <Compile Include="test_modules.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <InterpreterReference Include="Global|VisualStudio|Python3.14.6" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="commons\" />
+    <Folder Include="commons\archive\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in

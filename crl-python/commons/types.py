@@ -11,7 +11,7 @@ License is GNU GENERAL PUBLIC LICENSE Version 3
 
 from typing import TypeAlias
 
-# ===== Identifiers Types =============================
+#=====   Identifiers Types   ==================================
 RiderId: TypeAlias = int  # std::uint32_t
 TeamId: TypeAlias = int  # std::uint32_t
 
@@ -20,18 +20,18 @@ KomId: TypeAlias = int  # std::uint32_t
 SprintId: TypeAlias = int  # std::uint32_t
 
 
-# ===== Categories ====================================
+#=====   Categories   =========================================
 KomCategory: TypeAlias = int  # std::uint8_t
 
 
-# ===== Ranks =========================================
+#=====   Ranks   ==============================================
 RankId: TypeAlias = int  # std::int32_t
-# ----- specific values -------------------------------
+#-----   specific values   ------------------------------------
 RANK_DNS: RankId = 0
 RANK_DNF: RankId = -1
 RANK_DSQ: RankId = -2
 
 
-# ===== Points Scores =================================
+#=====   Points Scores   ======================================
 PointScore: TypeAlias = int  # std::int16_t
 BoardGameScore: TypeAlias = int  # std::int16_t

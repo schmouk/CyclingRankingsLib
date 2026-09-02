@@ -8,7 +8,7 @@
 
 int main()
 {
-    crl::Time t{ "103:31:15 1/5" };
+    crl::Time t{ "103:31:15.00" };
     std::cout << std::string(t) << '\n';
 
     crl::Time t2{ 43, 56, 1, 97, 100 };

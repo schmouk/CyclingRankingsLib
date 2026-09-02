@@ -12,5 +12,5 @@ License is GNU GENERAL PUBLIC LICENSE Version 3
 from typing import TypeAlias
 from .types import RiderId
 
-# ===== Teams Composition =============================
+#=====   Teams Composition   ==================================
 TeamComposition: TypeAlias = list[RiderId]

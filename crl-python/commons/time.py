@@ -10,15 +10,15 @@ License is GNU GENERAL PUBLIC LICENSE Version 3
 """
 
 import re
-#import math
 import sys
 from typing import Optional, Union
 
 
-# ===== Time Fraction of Seconds ======================
+#======   Time Fraction of Seconds   ==========================
 class SecondFraction:
     """Represents a fraction of seconds for time calculations."""
 
+    #----------------------------------------------------------
     def __init__(self, value: int = 0, precision: int = 1) -> None:
         """Initialize a SecondFraction.
 
@@ -29,6 +29,7 @@ class SecondFraction:
         self.value: int = value
         self.precision: int = precision
 
+    #----------------------------------------------------------
     def __float__(self) -> float:
         """Convert fraction to float."""
         try:
@@ -36,6 +37,7 @@ class SecondFraction:
         except:
             return 0.0
 
+    #----------------------------------------------------------
     def __str__(self) -> str:
         """Convert fraction to string representation."""
         match self.precision:
@@ -50,22 +52,24 @@ class SecondFraction:
             case _:
                 return f" {self.value}/{self.precision}"
 
+    #----------------------------------------------------------
     def __iadd__(self, other: 'SecondFraction') -> 'SecondFraction':
         """Add another fraction to this fraction (+=)."""
         if self.precision == other.precision:
             self.value += other.value
         else:
-            common_denominator = self._lcm(self.precision, other.precision)
-            numerator = (
+            common_denominator: int = self._lcm(self.precision, other.precision)
+            numerator: int = (
                 self.value * (common_denominator // self.precision) +
                 other.value * (common_denominator // other.precision)
             )
-            gcd = self._gcd(numerator, common_denominator)
+            gcd: int = self._gcd(numerator, common_denominator)
             self.value = numerator // gcd
             self.precision = common_denominator // gcd
 
         return self
 
+    #----------------------------------------------------------
     @staticmethod
     def _gcd(a: int, b: int) -> int:
         """Calculate greatest common divisor."""
@@ -73,111 +77,46 @@ class SecondFraction:
             a, b = b, a % b
         return a
 
+    #----------------------------------------------------------
     @staticmethod
     def _lcm(a: int, b: int) -> int:
         """Calculate least common multiple."""
         return (a // SecondFraction._gcd(a, b)) * b
 
 
-# ===== Time Scores ===================================
+#=====   Time Scores - Base class   ===========================
 class Time:
-    """Represents a time value with seconds and fractions."""
+    """Represents a time value with seconds and fractions.
+    This is the base class for all other TimeXYZ classes.
+    """
 
+    #----------------------------------------------------------
     def __init__(
         self,
         h: Optional[int] = None,
         m: Optional[int] = None,
-        s: Optional[Union[int, float]] = None,
-        frac_val: Optional[int] = None,
+        s: Optional[int] = None,
+        frac_val: Optional[int | SecondFraction] = None,
         frac_prec: Optional[int] = None
     ) -> None:
-        """Initialize a Time object.
-
-        Supports multiple constructor patterns:
-        - Time(h, m, s, frac_val, frac_prec)
-        - Time(h, m, s, SecondFraction)
-        - Time(h, m, s)
-        - Time(m, s, frac_val, frac_prec)
-        - Time(m, s, SecondFraction)
-        - Time(m, s)
-        - Time(s, frac_val, frac_prec)
-        - Time(s, SecondFraction)
-        - Time(unsigned_int_s)
-        - Time(double_time, precision)
-        - Time(time_string)
-        """
-        self._seconds: int = 0
-        self._fraction: SecondFraction = SecondFraction(0, 1)
-        self._error_msg: str = ""
-
-        # Determine which constructor pattern was used
+        """Initialize a Time object."""
+        # Determines which constructor pattern was used
         if h is None:
             # Empty constructor
-            pass
-        elif isinstance(h, str):
-            # String constructor
-            self._evaluate_time(h)
-        elif isinstance(h, float):
-            # Double constructor with precision
-            self._init_from_double(h, m if m is not None else 0)
-        elif m is None:
-            # Single parameter: unsigned int seconds
-            self._init_from_seconds(int(h))
-        elif s is None:
-            # Two parameters: m, s (no fraction)
-            self._evaluate_data(0, int(h), int(m))
-        elif isinstance(s, SecondFraction):
-            # Pattern: Time(h, m, s_or_m, SecondFraction)
-            if frac_val is None:  # This is Time(m, s, SecondFraction)
-                self._evaluate_data(0, int(h), int(m), s)
-            else:  # This is Time(h, m, s, SecondFraction)
-                self._evaluate_data(int(h), int(m), int(frac_val), s)
-        elif frac_val is not None and frac_prec is not None:
-            # Pattern with frac_val and frac_prec
-            if frac_prec is None:  # Time(s, frac_val, frac_prec)
-                self._evaluate_data(0, 0, int(h), SecondFraction(int(m), int(s)))
-            else:  # Time(h, m, s, frac_val, frac_prec) or Time(m, s, frac_val, frac_prec)
-                # Determine if h is hours or minutes based on value patterns
-                if isinstance(frac_val, int):
-                    # For now assume it's Time(h, m, s, frac_val, frac_prec) pattern
-                    self._evaluate_data(int(h), int(m), int(s), SecondFraction(int(frac_val), int(frac_prec)))
+            self._seconds: int = 0
+            self._fraction: SecondFraction = SecondFraction(0, 1)
+            self._error_msg: str = ""
+
+        elif m is None or s is None:
+            # Erroneous constructor
+            self._seconds: int = 0
+            self._fraction: SecondFraction = SecondFraction(0, 1)
+            self._error_msg: str = f"Erroneous format for creation of a Time: ({h}:{m}:{s})"
+
         else:
-            # Pattern: Time(h, m, s) or Time(m, s) or Time(s)
-            # Need to infer based on parameter magnitudes
-            if isinstance(h, int) and m is not None and s is not None:
-                if h > 255:  # Can't be uint8_t, must be hours
-                    self._evaluate_data(h, int(m), int(s))
-                elif m > 255:  # Can't be uint8_t for minutes
-                    # time(s, frac_val, frac_prec) pattern
-                    self._evaluate_data(0, 0, int(h), SecondFraction(int(m), int(s)))
-                else:
-                    # Could be (m, s) or (h, m, s), default to (h, m, s)
-                    self._evaluate_data(int(h), int(m), int(s))
+            self._evaluate_data(h, m, s, frac_val, frac_prec)
 
-    def _init_from_double(self, time_val: float, precision: int) -> None:
-        """Initialize from a double value with precision."""
-        int_part = int(time_val)
-        frac_part = time_val - int_part
-
-        self._seconds = int_part
-        if precision == 0:
-            self._fraction = SecondFraction(0, 1)
-        else:
-            self._fraction = SecondFraction(
-                int(precision * frac_part),
-                precision
-            )
-
-    def _init_from_seconds(self, total_seconds: int) -> None:
-        """Initialize from total seconds."""
-        if total_seconds < 60:
-            self._evaluate_data(0, 0, total_seconds)
-        else:
-            h = total_seconds // 3600
-            m = (total_seconds % 3600) // 60
-            s = total_seconds % 60
-            self._evaluate_data(h, m, s)
-
+    #----------------------------------------------------------
     def __int__(self) -> int:
         """Convert to integer (long)."""
         if self._seconds <= sys.maxsize:
@@ -189,10 +128,12 @@ class Time:
             )
             return sys.maxsize
 
+    #----------------------------------------------------------
     def __float__(self) -> float:
         """Convert to float."""
         return float(self._seconds) + float(self._fraction)
 
+    #----------------------------------------------------------
     def __str__(self) -> str:
         """Convert to string representation."""
         if not self.is_ok():
@@ -211,6 +152,7 @@ class Time:
 
         return f"{s:2d}{frac}"
 
+    #----------------------------------------------------------
     def __add__(self, other: 'Time') -> 'Time':
         """Add two times."""
         result = Time()
@@ -220,6 +162,7 @@ class Time:
         result._error_msg = self._error_msg if self._error_msg else other._error_msg
         return result
 
+    #----------------------------------------------------------
     def __sub__(self, other: 'Time') -> 'Time':
         """Subtract two times (evaluates gaps, always positive)."""
         if not self.is_ok():
@@ -238,6 +181,7 @@ class Time:
         else:
             return Time(t1 - t2, final_precision)
 
+    #----------------------------------------------------------
     def __iadd__(self, other: 'Time') -> 'Time':
         """Add another time to this time (+=)."""
         if not self.is_ok():
@@ -252,6 +196,7 @@ class Time:
 
         return self
 
+    #----------------------------------------------------------
     def __isub__(self, other: 'Time') -> 'Time':
         """Subtract another time from this time (-=)."""
         if not self.is_ok():
@@ -272,33 +217,50 @@ class Time:
 
         return self
 
+    #----------------------------------------------------------
     def is_ok(self) -> bool:
         """Check if this Time object is valid (no error)."""
         return len(self._error_msg) == 0
 
+    #----------------------------------------------------------
     def get_error_message(self) -> str:
         """Get the error message if any."""
         return self._error_msg
 
+    #----------------------------------------------------------
     def _evaluate_data(
         self,
         h: int,
         m: int,
         s: int,
-        frac: Optional[SecondFraction] = None
+        frac_val: Optional[int | SecondFraction] = None,
+        frac_prec: Optional[int] = None
     ) -> None:
         """Evaluate and set time data from h, m, s and optional fraction."""
         if m >= 60:
             self._error_msg = f"bad value for minutes: {m}"
-        elif s >= 60:
+            return
+        
+        if s >= 60:
             self._error_msg = f"bad value for seconds: {s}"
+            return
+
+        self._seconds = 3600 * h + 60 * m + s
+        if frac_val is None:
+            self._fraction = SecondFraction(0, 1)
         else:
-            self._seconds = 3600 * h + 60 * m + s
-            self._fraction = frac if frac is not None else SecondFraction(0, 1)
+            self._fraction = SecondFraction(frac_val, int(frac_prec)) if isinstance(frac_val, int) else frac_val
+        
+        if self._fraction.precision == 0:
+            self._error_msg = "bad value for precision on fractions of seconds: 0"
+        else:
             self._error_msg = ""
 
+    #----------------------------------------------------------
     def _evaluate_frac(self, frac_str: str, frac_precision: Optional[str] = None) -> None:
         """Evaluate fraction from string representation."""
+        self._error_msg = ""
+
         if not frac_str:
             self._fraction = SecondFraction(0, 1)
             return
@@ -307,6 +269,9 @@ class Time:
             # Pattern: "value/precision"
             self._fraction.value = int(frac_str)
             self._fraction.precision = int(frac_precision)
+            if self._fraction.precision == 0:
+                self._error_msg = "bad value for precision on fractions of seconds: 0"
+
         else:
             # Pattern: ".digits"
             frac_value = int(frac_str)
@@ -320,7 +285,70 @@ class Time:
                 case _:
                     self._fraction = SecondFraction(int(frac_str[:3]), 1000)
 
-    def _evaluate_time(self, time_str: str) -> None:
+
+#=====   Time Scores - HMS class   ============================
+class HMSTime(Time):
+    #----------------------------------------------------------
+    def __init__(
+        self,
+        h: Optional[int] = None,
+        m: Optional[int] = None,
+        s: Optional[int] = None,
+        frac_val: Optional[int | SecondFraction] = None,
+        frac_prec: Optional[int] = None
+    ) -> None:
+        super().__init__(h, m, s, frac_val, frac_prec)
+
+
+#=====   Time Scores - MS class   =============================
+class MSTime(Time):
+    #----------------------------------------------------------
+    def __init__(
+        self,
+        m: Optional[int] = None,
+        s: Optional[int] = None,
+        frac_val: Optional[int | SecondFraction] = None,
+        frac_prec: Optional[int] = None
+    ) -> None:
+        super().__init__(0, m, s, frac_val, frac_prec)
+
+
+#=====   Time Scores - S class   ==============================
+class STime(Time):
+    #----------------------------------------------------------
+    def __init__(
+        self,
+        s: Optional[int] = None,
+        frac_val: Optional[int | SecondFraction] = None,
+        frac_prec: Optional[int] = None
+    ) -> None:
+        super().__init__(0, 0, s, frac_val, frac_prec)
+
+
+#=====   Time Scores - creation from double value   ===========
+class DoubleTime(Time):
+    #----------------------------------------------------------
+    def __init__(self, time_val: float, precision: Optional[int] = None) -> None:
+        """Initialize from a double value with maybe precision."""
+        super().__init__()
+
+        int_part = int(time_val)
+        frac_part = time_val - int_part
+
+        self._seconds = int_part
+        if precision is None:
+            self._fraction = SecondFraction(0, 1)
+        else:
+            self._fraction = SecondFraction(
+                int(precision * frac_part),
+                precision
+            )
+         
+            
+#=====   Time Scores - creation from str value   ==============
+class StrTime(Time):
+#----------------------------------------------------------
+    def __init__(self, time_str: str) -> None:
         """Evaluate time from string representation.
 
         Supports formats:
@@ -331,6 +359,8 @@ class Time:
         - SS frac_val/frac_precision
         - SS.frac
         """
+        super().__init__()
+
         # HHH:MM:SS frac_val/frac_precision
         match = re.search(r'^(\d\d*):(\d\d):(\d\d) (\d+)/(\d+)', time_str)
         if match:
