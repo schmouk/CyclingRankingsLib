@@ -16,7 +16,6 @@
 #include <limits>
 #include <regex>
 #include <string>
-#include <string_view>
 
 #include "./time.h"
 
@@ -377,6 +376,8 @@ namespace crl
     {
         _fraction.value = std::stoi(frac_value);
         _fraction.precision = std::stoi(frac_precision);
+        if (_fraction.precision == 0)
+            _error_msg = "bad value for precision on fractions of seconds: 0";
     }
 
     //-----------------------------------------------------
@@ -400,7 +401,7 @@ namespace crl
 
         // HHH:MM:SS.frac
         if (std::regex_search(time_str, time_matches,
-                std::regex("^(\\d\\d*):(\\d\\d):(\\d\\d)(.(\\d+))?")))
+                std::regex("^(\\d\\d*):(\\d\\d):(\\d\\d)(\\.(\\d+))?")))
         {
             // Match h, m, s and maybe fraction!
             const std::int32_t h{ std::stol(time_matches[1]) };
@@ -427,7 +428,7 @@ namespace crl
 
         // MM:SS.frac
         if (std::regex_search(time_str, time_matches,
-            std::regex("^(\\d\\d*):(\\d\\d)(.(\\d+))?")))
+            std::regex("^(\\d\\d*):(\\d\\d)(\\.(\\d+))?")))
         {
             // Match m, s and maybe fraction!
             const std::int32_t m{ std::stol(time_matches[1]) };
@@ -450,7 +451,7 @@ namespace crl
 
         // SS.frac
         if (std::regex_search(time_str, time_matches,
-            std::regex("^(\\d\\d?)(.(\\d+))?")))
+            std::regex("^(\\d\\d?)(\\.(\\d+))?")))
         {
             // Match s and maybe fraction!
             _seconds = std::stol(time_matches[1]);
