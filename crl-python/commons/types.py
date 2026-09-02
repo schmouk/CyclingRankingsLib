@@ -27,9 +27,9 @@ KomCategory: TypeAlias = int  # std::uint8_t
 # ===== Ranks =========================================
 RankId: TypeAlias = int  # std::int32_t
 # ----- specific values -------------------------------
-RANK_DNS: int = 0
-RANK_DNF: int = -1
-RANK_DSQ: int = -2
+RANK_DNS: RankId = 0
+RANK_DNF: RankId = -1
+RANK_DSQ: RankId = -2
 
 
 # ===== Points Scores =================================
