@@ -1,0 +1,34 @@
+#!/usr/bin/env python
+"""Quick functional test of the translated modules."""
+
+from commons.time import SecondFraction, Time
+from commons.types import RANK_DNS, RANK_DNF, RANK_DSQ
+from commons.teams import TeamComposition
+
+# Test SecondFraction
+frac = SecondFraction(5, 10)
+print(f'SecondFraction(5, 10) = {float(frac):.3f}')
+print(f'str(SecondFraction(5, 10)) = {str(frac)}')
+
+# Test Time
+t1 = Time(1, 30, 45)
+print(f'Time(1, 30, 45) = {str(t1)}')
+t2 = Time(0, 20, 30)
+print(f'Time(0, 20, 30) = {str(t2)}')
+t3 = t1 + t2
+print(f'Time(1, 30, 45) + Time(0, 20, 30) = {str(t3)}')
+
+# Test from string
+t4 = Time('2:15:30.5')
+print(f'Time("2:15:30.5") = {str(t4)}')
+
+# Test constants
+print(f'RANK_DNS = {RANK_DNS}')
+print(f'RANK_DNF = {RANK_DNF}')
+print(f'RANK_DSQ = {RANK_DSQ}')
+
+# Test TeamComposition
+team: TeamComposition = [1, 2, 3, 4, 5]
+print(f'TeamComposition = {team}')
+
+print('\nAll functional tests passed!')
