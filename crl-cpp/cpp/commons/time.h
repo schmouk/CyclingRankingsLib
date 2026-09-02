@@ -22,8 +22,8 @@ namespace crl
     class SecondFraction
     {
     public:
-        std::uint16_t numerator;    // Notice: numerator may be greater than denominator (in a few circumstances)
-        std::uint16_t denominator;  // Notice: mostly frequent values are 5, 10, 100 or 1000
+        std::uint16_t value;      // Notice: value may be greater than precision (in a few circumstances)
+        std::uint16_t precision;  // Notice: mostly frequent precision values are 5, 10, 100 or 1000 (-th of second)
 
         operator double() const noexcept;
         operator std::string() const noexcept;
@@ -43,16 +43,22 @@ namespace crl
     {
     public:
         //-----   Constructors / Destructor   -----------------
+        Time(const std::uint16_t h, const std::uint8_t m, const std::uint8_t s, const std::uint16_t frac_val, const std::uint16_t frac_prec) noexcept;
         Time(const std::uint16_t h, const std::uint8_t m, const std::uint8_t s, const SecondFraction frac) noexcept;
         Time(const std::uint16_t h, const std::uint8_t m, const std::uint8_t s) noexcept;
+
+        Time(const std::uint8_t  m, const std::uint8_t s, const std::uint16_t frac_val, const std::uint16_t frac_prec) noexcept;
         Time(const std::uint8_t  m, const std::uint8_t s, const SecondFraction frac) noexcept;
         Time(const std::uint8_t  m, const std::uint8_t s) noexcept;
+
+        Time(const std::uint8_t  s, const std::uint16_t frac_val, const std::uint16_t frac_prec) noexcept;
         Time(const std::uint8_t  s, const SecondFraction frac) noexcept;
         explicit Time(const unsigned int s) noexcept;
 
         explicit Time(const double time, const int precision = 0) noexcept;  // mostly used values for precision: 0, 5, 10, 100, 1000
 
-        explicit Time(std::string_view time) noexcept;
+        explicit Time(const std::string& time) noexcept;
+        explicit Time(const char* time) noexcept;
 
         virtual ~Time() noexcept = default;
 
@@ -63,6 +69,9 @@ namespace crl
         //-----   Assignment operators   ----------------------
         Time& operator= (const Time&) noexcept = default;
         Time& operator= (Time&&) noexcept = default;
+
+        Time& operator= (std::string& time) noexcept;
+        Time& operator= (const char* time) noexcept;
 
         Time& operator+= (const Time& other) noexcept;
         Time& operator-= (const Time& other) noexcept;
@@ -75,7 +84,7 @@ namespace crl
         operator std::string() const noexcept;
 
         Time operator+ (const Time& other) noexcept;
-        Time operator- (const Time& other) noexcept;
+        Time operator- (const Time& other) noexcept;  // Notice: evaluates gaps
 
 
         //-----   Operations   --------------------------------
@@ -92,7 +101,11 @@ namespace crl
         //-----------------------------------------------------
         void _evaluate_data(const std::uint16_t h, const std::uint8_t m, const std::uint8_t s, const SecondFraction frac) noexcept;
         void _evaluate_data(const std::uint16_t h, const std::uint8_t m, const std::uint8_t s) noexcept;
+        void _evaluate_frac(const std::string& frac_str) noexcept;
+        void _evaluate_frac(const std::string& frac_value, const std::string& frac_precision) noexcept;
+        void _evaluate_time(const std::string& str) noexcept;
 
     };
+
 
 }

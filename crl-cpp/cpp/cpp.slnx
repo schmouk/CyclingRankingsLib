@@ -3,6 +3,11 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="../cpp-tests/cpp-tests.vcxproj" Id="e1e090ee-353a-4178-b2fc-225331d33192" />
+  <Project Path="../cpp-tests/cpp-tests.vcxproj" Id="e1e090ee-353a-4178-b2fc-225331d33192">
+    <BuildDependency Project="cpp.vcxproj" />
+  </Project>
+  <Project Path="../mini-tests/mini-tests.vcxproj" Id="c72dfd67-e82d-4d37-ac4b-9d2e4c72fac0">
+    <BuildDependency Project="cpp.vcxproj" />
+  </Project>
   <Project Path="cpp.vcxproj" Id="6186ce83-aed6-47e4-aa98-e9424938304e" />
 </Solution>
