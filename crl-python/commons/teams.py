@@ -22,8 +22,7 @@ https://github.com/schmouk/CyclingRankingsLib/blob/main/LICENSE).
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-from typing import TypeAlias
 from .types import RiderId
 
 #=====   Teams Composition   ==================================
-TeamComposition: TypeAlias = list[RiderId]
+type TeamComposition = list[RiderId]

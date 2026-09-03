@@ -22,23 +22,21 @@ https://github.com/schmouk/CyclingRankingsLib/blob/main/LICENSE).
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-from typing import TypeAlias
-
 #=====   Identifiers Types   ==================================
-RiderId: TypeAlias = int  # std::uint32_t
-TeamId: TypeAlias = int  # std::uint32_t
+type RiderId = int  # std::uint32_t
+type TeamId = int  # std::uint32_t
 
-StageId: TypeAlias = int  # std::uint32_t
-KomId: TypeAlias = int  # std::uint32_t
-SprintId: TypeAlias = int  # std::uint32_t
+type StageId = int  # std::uint32_t
+type KomId = int  # std::uint32_t
+type SprintId = int  # std::uint32_t
 
 
 #=====   Categories   =========================================
-KomCategory: TypeAlias = int  # std::uint8_t
+type KomCategory = int  # std::uint8_t
 
 
 #=====   Ranks   ==============================================
-RankId: TypeAlias = int  # std::int32_t
+type RankId = int  # std::int32_t
 #-----   specific values   ------------------------------------
 RANK_DNS: RankId = 0
 RANK_DNF: RankId = -1
@@ -46,5 +44,5 @@ RANK_DSQ: RankId = -2
 
 
 #=====   Points Scores   ======================================
-PointScore: TypeAlias = int  # std::int16_t
-BoardGameScore: TypeAlias = int  # std::int16_t
+type PointScore = int  # std::int16_t
+type BoardGameScore = int  # std::int16_t
