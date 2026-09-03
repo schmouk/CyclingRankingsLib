@@ -325,8 +325,8 @@ class STime(Time):
         super().__init__(0, 0, s, frac_val, frac_prec)
 
 
-#=====   Time Scores - creation from double value   ===========
-class DoubleTime(Time):
+#=====   Time Scores - creation from float value   ============
+class FltTime(Time):
     #----------------------------------------------------------
     def __init__(self, time_val: float, precision: Optional[int] = None) -> None:
         """Initialize from a double value with maybe precision."""

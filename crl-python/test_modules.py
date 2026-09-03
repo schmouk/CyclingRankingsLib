@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Quick functional test of the translated modules."""
 
-from commons.time import SecondFraction, Time, HMSTime, MSTime, STime, DoubleTime, StrTime
+from commons.time import SecondFraction, Time, HMSTime, MSTime, STime, FltTime, StrTime
 from commons.types import RANK_DNS, RANK_DNF, RANK_DSQ
 from commons.teams import TeamComposition
 
@@ -11,12 +11,12 @@ print(f'SecondFraction(5, 10) = {float(frac):.3f}')
 print(f'str(SecondFraction(5, 10)) = {str(frac)}')
 
 # Test Time
-t1 = HMSTime(1, 30, 45)
+t1 = Time(1, 30, 45)
 print(f'Time(1, 30, 45) = {str(t1)}')
-t2 = Time(0, 20, 30)
-print(f'Time(0, 20, 30) = {str(t2)}')
+t2 = MSTime(20, 30)
+print(f'MSTime(20, 30) = {str(t2)}')
 t3 = t1 + t2
-print(f'Time(1, 30, 45) + Time(0, 20, 30) = {str(t3)}')
+print(f'Time(1, 30, 45) + MSTime(20, 30) = {str(t3)}')
 
 # Test from string
 t4 = StrTime('2:15:30.5')
