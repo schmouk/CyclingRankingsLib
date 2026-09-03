@@ -171,10 +171,12 @@
     <ClInclude Include="commons\time.h" />
     <ClInclude Include="commons\types.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="utils\random.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="commons\time.cpp" />
     <ClCompile Include="cpp.cpp" />
+    <ClCompile Include="utils\random.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

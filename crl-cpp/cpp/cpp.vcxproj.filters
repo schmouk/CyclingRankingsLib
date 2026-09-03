@@ -27,12 +27,18 @@
     <ClInclude Include="commons\time.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="utils\random.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cpp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="commons\time.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="utils\random.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
