@@ -152,8 +152,8 @@ When time comes for randomness, for instance for compositing heats, or as an hel
 The interface with the pseudo-random numbers generator is simple and well described. The calling applications may ask for random generation at any time. They may provide also a specific seed to repeat "random" series (for tests purpose). Finally, some specific applications may use it to simulate dices rolls, for the usage of board games for instance.
 
 #### 4.9.3 Average speed
-When providing a distance (in kilometers or in miles, may be with a fraction added to it) and a time with its precision (hh:mm, hh:mm:ss, hh:mm:ss.frc), a **Cycling Rankings Library** returns the related average speed in km/h or in mph with a fractional value precision adapted to the precision of the provided time. The precision of the fractional part of the average speed contains up to three digits and the number of digits (0, 1, 2 or 3) is adapted to the precision of the provided time: the better the time rpecision, the better the average speed precision.  
-The returned value is a string.
+When providing a distance (in kilometers or in miles, may be with a fraction added to it) and a time with its precision (hh:mm, hh:mm:ss, hh:mm:ss.frc), the **Cycling Rankings Library** returns the related average speed in km/h or in mph with a fractional value precision adapted to the precision of the provided time. The precision of the fractional part of the average speed contains up to three digits and the number of digits (0, 1, 2 or 3) is adapted to the precision of the provided time: the better the time precision, the better the average speed precision.  
+The returned value is a string with the sole value and not the units.
 
 
 ## 5. References
