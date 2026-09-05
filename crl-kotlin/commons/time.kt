@@ -68,10 +68,10 @@ class SecondFraction(
 
 
 //=====   Time Scores   ===================================
-class Time {
-    private var _seconds: Int = 0
-    private var _fraction: SecondFraction = SecondFraction()
-    private var _error_msg: String = ""
+open class Time {
+    protected var _seconds: Int = 0
+    protected var _fraction: SecondFraction = SecondFraction()
+    protected var _error_msg: String = ""
 
     constructor(other: Time) {
         _seconds = other._seconds
@@ -131,7 +131,7 @@ class Time {
     }
 
     fun assign(time: String?): Time {
-        _error_msg = ""
+        clr_error()
         _seconds = 0
         _fraction = SecondFraction()
         if (time != null) _evaluate_time(time)
@@ -143,7 +143,7 @@ class Time {
             _error_msg = "attempt to add an erroneous time ($_error_msg) -> no addition"
         } else if (other.is_ok()) {
             _seconds += other._seconds
-            _error_msg = ""
+            clr_error()
             _fraction += other._fraction
         } else {
             _error_msg = "attempt to add an erroneous time (${other._error_msg}) -> no addition"
@@ -155,7 +155,7 @@ class Time {
             _error_msg = "attempt to add an erroneous time ($_error_msg) -> no substraction"
         } else if (other.is_ok()) {
             if (other._seconds <= _seconds) {
-                _error_msg = ""
+                clr_error()
                 _seconds -= other._seconds
             } else {
                 _error_msg = "can't substract ${other._seconds} seconds from $_seconds seconds, result set to 0"
@@ -198,6 +198,10 @@ class Time {
 
     fun get_error_message(): String = _error_msg
 
+    fun clr_error() {
+        _error_msg = ""
+    }
+
     private fun _evaluate_data(h: UShort, m: UByte, s: UByte, frac: SecondFraction) {
         when {
             m >= 60.toUByte() -> _error_msg = "bad value for minutes: $m"
@@ -205,7 +209,7 @@ class Time {
             else -> {
                 _seconds = 3600 * h.toInt() + 60 * m.toInt() + s.toInt()
                 _fraction = frac
-                _error_msg = ""
+                clr_error()
             }
         }
     }
@@ -232,49 +236,199 @@ class Time {
         if (_fraction.precision == 0.toUShort()) _error_msg = "bad value for precision on fractions of seconds: 0"
     }
 
-    private fun _evaluate_time(str: String) {
-        try {
-            val hoursWithFraction = Regex("^(\\d+):(\\d{2}):(\\d{2}) (\\d+)/(\\d+)$").matchEntire(str)
-            val hoursWithDecimal = Regex("^(\\d+):(\\d{2}):(\\d{2})(?:\\.(\\d+))?$").matchEntire(str)
-            val minutesWithFraction = Regex("^(\\d{1,2}):(\\d{2}) (\\d+)/(\\d+)$").matchEntire(str)
-            val minutesWithDecimal = Regex("^(\\d+):(\\d{2})(?:\\.(\\d+))?$").matchEntire(str)
-            val secondsWithFraction = Regex("^(\\d{1,2}) (\\d+)/(\\d+)$").matchEntire(str)
-            val secondsWithDecimal = Regex("^(\\d{1,2})(?:\\.(\\d+))?$").matchEntire(str)
+    protected open fun _evaluate_time(str: String) {
+        if (_evaluate_hms_ratio(str)) return
+        if (_evaluate_hms_frac(str)) return
+        if (_evaluate_ms_frac(str)) return
+        if (_evaluate_s_frac(str)) return
+        if (_evaluate_ms_ratio(str)) return
+        if (_evaluate_s_ratio(str)) return
 
-            when {
-                hoursWithFraction != null -> {
-                    val groups = hoursWithFraction.groupValues
-                    _seconds = 3600 * groups[1].toInt() + 60 * groups[2].toInt() + groups[3].toInt()
-                    _evaluate_frac(groups[4], groups[5])
-                }
-                hoursWithDecimal != null -> {
-                    val groups = hoursWithDecimal.groupValues
-                    _seconds = 3600 * groups[1].toInt() + 60 * groups[2].toInt() + groups[3].toInt()
-                    _evaluate_frac(groups[4])
-                }
-                minutesWithFraction != null -> {
-                    val groups = minutesWithFraction.groupValues
-                    _seconds = 60 * groups[1].toInt() + groups[2].toInt()
-                    _evaluate_frac(groups[3], groups[4])
-                }
-                minutesWithDecimal != null -> {
-                    val groups = minutesWithDecimal.groupValues
-                    _seconds = 60 * groups[1].toInt() + groups[2].toInt()
-                    _evaluate_frac(groups[3])
-                }
-                secondsWithFraction != null -> {
-                    val groups = secondsWithFraction.groupValues
-                    _seconds = groups[1].toInt()
-                    _evaluate_frac(groups[2], groups[3])
-                }
-                secondsWithDecimal != null -> {
-                    val groups = secondsWithDecimal.groupValues
-                    _seconds = groups[1].toInt()
-                    _evaluate_frac(groups[2])
-                }
+        _error_msg = "bad time string: $str"
+    }
+
+    private fun _evaluate_hms_ratio(str: String) : Boolean {
+        try {
+            clr_error()
+
+            val hoursWithFraction = Regex("^(\\d+):(\\d{2}):(\\d{2}) (\\d+)/(\\d+)$").matchEntire(str)
+            if (hoursWithFraction != null) {
+                val groups = hoursWithFraction.groupValues
+                _seconds = 3600 * groups[1].toInt() + 60 * groups[2].toInt() + groups[3].toInt()
+                _evaluate_frac(groups[4], groups[5])
+                return true
             }
+            else return false
         } catch (_: NumberFormatException) {
-            _error_msg = "bad time value: $str"
+            _error_msg = "bad HMS time string: $str"
+            return false
         }
+    }
+
+    private fun _evaluate_hms_frac(str: String) : Boolean {
+        try {
+            clr_error()
+
+            val hoursWithDecimal = Regex("^(\\d+):(\\d{2}):(\\d{2})(?:\\.(\\d+))?$").matchEntire(str)
+            if (hoursWithDecimal != null) {
+                val groups = hoursWithDecimal.groupValues
+                _seconds = 3600 * groups[1].toInt() + 60 * groups[2].toInt() + groups[3].toInt()
+                _evaluate_frac(groups[4])
+                return true
+            }
+            else return false
+        } catch (_: NumberFormatException) {
+            _error_msg = "bad HMS time string: $str"
+            return false
+        }
+    }
+
+    protected fun _evaluate_ms_ratio(str: String) : Boolean {
+        try {
+            clr_error()
+
+            val minutesWithFraction = Regex("^(\\d{1,2}):(\\d{2}) (\\d+)/(\\d+)$").matchEntire(str)
+            if (minutesWithFraction != null) {
+                val groups = minutesWithFraction.groupValues
+                _seconds = 60 * groups[1].toInt() + groups[2].toInt()
+                _evaluate_frac(groups[3], groups[4])
+                return true
+            }
+            else return false
+        } catch (_: NumberFormatException) {
+            _error_msg = "bad MS time string: $str"
+            return false
+        }
+    }
+
+    protected fun _evaluate_ms_frac(str: String) : Boolean {
+        try {
+            clr_error()
+
+            val minutesWithDecimal = Regex("^(\\d+):(\\d{2})(?:\\.(\\d+))?$").matchEntire(str)
+            if (minutesWithDecimal != null) {
+                val groups = minutesWithDecimal.groupValues
+                _seconds = 60 * groups[1].toInt() + groups[2].toInt()
+                _evaluate_frac(groups[3])
+                return true
+            }
+            else return false
+        } catch (_: NumberFormatException) {
+            _error_msg = "bad MS time string: $str"
+            return false
+        }
+    }
+
+    protected fun _evaluate_s_ratio(str: String) : Boolean {
+        try {
+            clr_error()
+
+            val secondsWithFraction = Regex("^(\\d{1,2}) (\\d+)/(\\d+)$").matchEntire(str)
+            if (secondsWithFraction != null) {
+                val groups = secondsWithFraction.groupValues
+                _seconds = groups[1].toInt()
+                _evaluate_frac(groups[2], groups[3])
+                return true
+            }
+            else return false
+        } catch (_: NumberFormatException) {
+            _error_msg = "bad S time vastringlue: $str"
+            return false
+        }
+    }
+
+    protected fun _evaluate_s_frac(str: String) : Boolean {
+        try {
+            clr_error()
+
+            val secondsWithDecimal = Regex("^(\\d{1,2})(?:\\.(\\d+))?$").matchEntire(str)
+            if (secondsWithDecimal != null) {
+                val groups = secondsWithDecimal.groupValues
+                _seconds = groups[1].toInt()
+                _evaluate_frac(groups[2])
+                return true
+            }
+            else return false
+        } catch (_: NumberFormatException) {
+            _error_msg = "bad S time string: $str"
+            return false
+        }
+    }
+
+}
+
+
+//=====   HMSTime Scores   ================================
+class HMSTime : Time {
+    constructor(other: Time) : super(other)
+    constructor(h: UShort, m: UByte, s: UByte, frac_val: UShort, frac_prec: UShort) : super(h, m, s, frac_val, frac_prec)
+    constructor(h: UShort, m: UByte, s: UByte, frac: SecondFraction) : super(h, m, s, frac)
+    constructor(h: UShort, m: UByte, s: UByte) : super(h, m, s)
+    constructor(m: UByte, s: UByte, frac_val: UShort, frac_prec: UShort) : super(m, s, frac_val, frac_prec)
+    constructor(m: UByte, s: UByte, frac: SecondFraction) : super(m, s, frac)
+    constructor(m: UByte, s: UByte) : super(m, s)
+    constructor(s: UByte, frac_val: UShort, frac_prec: UShort) : super(s, frac_val, frac_prec)
+    constructor(s: UByte, frac: SecondFraction) : super(s, frac)
+    constructor(s: UInt) : super(s)
+    constructor(time: Double) : super(time)
+    constructor(time: String?) : super(time)
+}
+
+
+//=====   HMTime Scores   =================================
+class HMTime : Time {
+    constructor(other: HMTime) : super(other)
+    constructor(h: UShort, m: UByte) : super(h, m, 0u)
+    constructor(time: String?) : super(time)
+    
+    override fun _evaluate_time(str: String) {
+        try {
+            val hoursWithFraction = Regex("^(\\d+):(\\d{2})$").matchEntire(str)
+            if (hoursWithFraction != null) {
+                val groups = hoursWithFraction.groupValues
+                _seconds = 3600 * groups[1].toInt() + 60 * groups[2].toInt()
+                clr_error()
+            }
+            else {
+                _error_msg = "bad HM time string: $str"
+            }
+        }
+        catch (_: NumberFormatException) {
+            _error_msg = "bad HM time string: $str"
+        }
+    }
+}
+
+
+//=====   MSTime Scores   =================================
+class MSTime : Time {
+    constructor(other: MSTime) : super(other)
+    constructor(m: UByte, s: UByte) : super(0u, m, s)
+    constructor(m: UByte, s: UByte, frac_val: UShort, frac_prec: UShort) : super(0u, m, s, frac_val, frac_prec)
+    constructor(m: UByte, s: UByte, frac: SecondFraction) : super(0u, m, s, frac)
+    constructor(time: String?) : super(time)
+    
+    override fun _evaluate_time(str: String) {
+        if (_evaluate_ms_frac(str)) return
+        if (_evaluate_ms_ratio(str)) return
+        
+        _error_msg = "bad 'minutes:seconds + fraction' time string: $str"
+    }
+}
+
+
+//=====   STime Scores   ==================================
+class STime : Time {
+    constructor(other: STime) : super(other)
+    constructor(s: UByte) : super(0u, 0u, s)
+    constructor(s: UByte, frac_val: UShort, frac_prec: UShort) : super(0u, 0u, s, frac_val, frac_prec)
+    constructor(s: UByte, frac: SecondFraction) : super(0u, 0u, s, frac)
+    constructor(time: String?) : super(time)
+    
+    override fun _evaluate_time(str: String) {
+        if (_evaluate_s_frac(str)) return
+        if (_evaluate_s_ratio(str)) return
+        
+        _error_msg = "bad 'seconds + fraction' time string: $str"
     }
 }
