@@ -44,6 +44,24 @@ class SecondFraction(
 
     fun toDouble(): Double = if (precision == 0.toUShort()) 0.0 else value.toDouble() / precision.toDouble()
 
+    operator fun compareTo(other: SecondFraction): Int {
+        if (precision == other.precision) return value.compareTo(other.value)
+        return when {
+            toDouble() < other.toDouble() - 0.001 -> -1
+            this == other -> 0
+            else -> 1
+        }
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is SecondFraction) return false
+        if (precision == other.precision) return value == other.value
+        return kotlin.math.abs(toDouble() - other.toDouble()) < 0.001
+    }
+
+    override fun hashCode(): Int = 0
+
     override fun toString(): String = when (precision.toInt()) {
         0, 1 -> ""
         10 -> ".${value}"
@@ -192,6 +210,19 @@ open class Time {
         val second = other.toDouble()
         val precision = maxOf(_fraction.precision.toInt(), other._fraction.precision.toInt())
         return Time(kotlin.math.abs(first - second), precision)
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is Time) return false
+        return _seconds == other._seconds && _fraction == other._fraction
+    }
+
+    override fun hashCode(): Int = 31 * _seconds + _fraction.hashCode()
+
+    operator fun compareTo(other: Time): Int {
+        val secondsComparison = _seconds.compareTo(other._seconds)
+        return if (secondsComparison != 0) secondsComparison else _fraction.compareTo(other._fraction)
     }
 
     fun is_ok(): Boolean = _error_msg.isEmpty()

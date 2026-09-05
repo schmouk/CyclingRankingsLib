@@ -86,6 +86,22 @@ class SecondFraction:
         return self
 
     #----------------------------------------------------------
+    def __lt__(self, other: SecondFraction) -> bool:
+        """Less-than operator."""
+        if self.precision == other.precision:
+            return self.value < other.value
+        else:
+            return float(self.value) <= float(other.value) - 0.001
+
+    #----------------------------------------------------------
+    def __eq__(self, other: SecondFraction) -> bool:
+        """Equality operator."""
+        if self.precision == other.precision:
+            return self.value == other.value
+        else:
+            return abs(float(self.value) - float(other.value)) < 0.001
+
+    #----------------------------------------------------------
     @staticmethod
     def _gcd(a: int, b: int) -> int:
         """Calculate greatest common divisor."""
@@ -248,6 +264,37 @@ class Time:
             self._error_msg = f"attempt to substract an erroneous time ({other._error_msg}) -> no substraction"
 
         return self
+
+    #----------------------------------------------------------
+    def __eq__(self, other: Time) -> bool:
+        """Equality operator."""
+        return self._seconds == other._seconds and self._fraction == other._fraction
+
+    #----------------------------------------------------------
+    def __neq__(self, other: Time) -> bool:
+        """Equality operator."""
+        return not(self == other)
+
+    #----------------------------------------------------------
+    def __lt__(self, other: Time) -> bool:
+        """Less-than operator."""
+        return (self._seconds < other._seconds or
+               (self._seconds == other._seconds and self._fraction < other._fraction))
+    
+    #----------------------------------------------------------
+    def __le__(self, other: Time) -> bool:
+        """Less-than operator."""
+        return self < other or self == other
+    
+    #----------------------------------------------------------
+    def __gt__(self, other: Time) -> bool:
+        """Less-than operator."""
+        return not self.__le__(other)
+    
+    #----------------------------------------------------------
+    def __ge__(self, other: Time) -> bool:
+        """Less-than operator."""
+        return not self.__lt__(other)
 
     #----------------------------------------------------------
     def clr_error(self) -> None:

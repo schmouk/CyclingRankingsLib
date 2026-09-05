@@ -54,6 +54,9 @@ namespace crl
 
         SecondFraction& operator+= (const SecondFraction&) noexcept;
 
+        const bool operator<(const SecondFraction& other) const noexcept;
+        const bool operator==(const SecondFraction& other) const noexcept;
+
 
     private:
         static std::uint32_t _gcd(std::uint32_t a, std::uint32_t b) noexcept;
@@ -103,6 +106,13 @@ namespace crl
         Time operator+ (const Time& other) noexcept;
         Time operator- (const Time& other) noexcept;  // Notice: evaluates gaps
 
+        const bool operator==(const Time& other) const noexcept;
+        const bool operator!=(const Time& other) const noexcept;
+        const bool operator<(const Time& other) const noexcept;
+        const bool operator<=(const Time& other) const noexcept;
+        const bool operator>(const Time& other) const noexcept;
+        const bool operator>=(const Time& other) const noexcept;
+
 
         //-----   Operations   --------------------------------
         const bool is_ok() const noexcept;
@@ -145,8 +155,6 @@ namespace crl
     {
     public:
         HMTime(const std::uint16_t h, const std::uint8_t m) noexcept;
-
-        explicit HMTime(const double time, const int precision = 0) noexcept;  // mostly used values for precision: 0, 5, 10, 100, 1000
 
         explicit HMTime(const std::string& time) noexcept;
         explicit HMTime(const char* time) noexcept;

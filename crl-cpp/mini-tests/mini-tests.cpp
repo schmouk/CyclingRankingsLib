@@ -18,5 +18,5 @@ int main()
     crl::MSTime ms1{ "1:02.345" };
     std::cout << std::string(ms1) << '\n';
 
-
+    std::cout << "t2 < t : " << (t2 < t ? "true" : "false") << std::endl;
 }

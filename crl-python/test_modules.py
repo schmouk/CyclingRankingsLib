@@ -20,6 +20,13 @@ print(f'Time(1, 30, 45) + MSTime(20, 30) = {str(t3)}')
 t3.set("00:01:23.456")
 print(f'Time("00:01:23.456") = {str(t3)}')
 
+print(f'{t3} < {t1} -> {t3 < t1}')
+print(f'{t3} >= {t1} -> {t3 >= t1}')
+print(f'{t3} <= {t1} -> {t3 <= t1}')
+print(f'{t3} > {t1} -> {t3 > t1}')
+print(f'{t3} == {t1} -> {t3 == t1}')
+print(f'{t3} != {t1} -> {t3 != t1}')
+
 # Test from string
 t4 = StrTime('2:15:30.5')
 print(f'Time("2:15:30.5") = {str(t4)}')

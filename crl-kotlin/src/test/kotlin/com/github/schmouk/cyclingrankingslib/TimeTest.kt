@@ -29,6 +29,19 @@ class TimeTest {
     }
 
     @Test
+    fun secondFractionSupportsCxxComparisonSemantics() {
+        val oneHalf = SecondFraction(1u, 2u)
+        val threeQuarters = SecondFraction(3u, 4u)
+        val closeValue = SecondFraction(500u, 1001u)
+
+        assertTrue(oneHalf < threeQuarters)
+        assertFalse(threeQuarters < oneHalf)
+        assertTrue(oneHalf == SecondFraction(1u, 2u))
+        assertTrue(oneHalf == closeValue)
+        assertFalse(oneHalf == threeQuarters)
+    }
+
+    @Test
     fun constructorsCreateExpectedTimes() {
         assertEquals(3723L, Time(1u.toUShort(), 2u.toUByte(), 3u.toUByte()).toLong())
         assertEquals(3723.25, Time(1u.toUShort(), 2u.toUByte(), 3u.toUByte(), 25u.toUShort(), 100u.toUShort()).toDouble(), 0.0)
@@ -114,5 +127,27 @@ class TimeTest {
         assertFalse(valid.is_ok())
         assertFalse((valid + invalid).is_ok())
         assertFalse((valid - invalid).is_ok())
+    }
+
+    @Test
+    fun timeSupportsAllComparisons() {
+        val earlier = Time("1:02:03.4")
+        val later = Time("1:02:03.5")
+        val same = Time("1:02:03.4")
+        val differentSeconds = Time("1:02:04")
+
+        assertTrue(earlier == same)
+        assertTrue(earlier != later)
+        assertTrue(earlier < later)
+        assertTrue(earlier <= same)
+        assertTrue(earlier <= later)
+        assertTrue(later > earlier)
+        assertTrue(later >= same)
+        assertTrue(differentSeconds > later)
+        assertTrue(differentSeconds >= later)
+        assertFalse(later < earlier)
+        assertFalse(later <= earlier)
+        assertFalse(earlier > later)
+        assertFalse(earlier >= later)
     }
 }

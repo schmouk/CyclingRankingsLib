@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <cstdlib>
 #include <ctime>
 #include <format>
 #include <limits>
@@ -85,6 +86,28 @@ namespace crl
         }
 
         return *this;
+    }
+
+    //---------------------------------------------------------
+    const bool SecondFraction::operator<(const SecondFraction& other) const noexcept
+    {
+        if (precision == other.precision) {
+            return value < other.value;
+        }
+        else {
+            return static_cast<double>(*this) < static_cast<double>(other) - 0.001;
+        }
+    }
+
+    //---------------------------------------------------------
+    const bool SecondFraction::operator==(const SecondFraction& other) const noexcept
+    {
+        if (precision == other.precision) {
+            return value == other.value;
+        }
+        else {
+            return std::abs(static_cast<double>(*this) - static_cast<double>(other)) < 0.001;
+        }
     }
 
     //---------------------------------------------------------
@@ -302,6 +325,43 @@ namespace crl
     }
 
     //---------------------------------------------------------
+    const bool Time::operator==(const Time& other) const noexcept
+    {
+        return _seconds == other._seconds && _fraction == other._fraction;
+    }
+
+    //---------------------------------------------------------
+    const bool Time::operator!=(const Time& other) const noexcept
+    {
+        return !(*this == other);
+    }
+
+    //---------------------------------------------------------
+    const bool Time::operator<(const Time& other) const noexcept
+    {
+        return (_seconds < other._seconds) ||
+            (_seconds == other._seconds && _fraction < other._fraction);
+    }
+
+    //---------------------------------------------------------
+    const bool Time::operator<=(const Time& other) const noexcept
+    {
+        return *this < other || *this < other;
+    }
+
+    //---------------------------------------------------------
+    const bool Time::operator>(const Time& other) const noexcept
+    {
+        return !(*this <= other);
+    }
+
+    //---------------------------------------------------------
+    const bool Time::operator>=(const Time& other) const noexcept
+    {
+        return !(*this < other);
+    }
+
+    //---------------------------------------------------------
     const bool Time::is_ok() const noexcept
     {
         return _error_msg.empty();
@@ -372,7 +432,6 @@ namespace crl
     //-----------------------------------------------------
     void Time::_evaluate_time(const std::string& time_str) noexcept
     {
-        // HHH:MM:SS frac_val/frac_precision
         if (_evaluate_hms_frac(time_str)  ||
             _evaluate_hms_ratio(time_str) ||
             _evaluate_ms_frac(time_str)   ||
@@ -524,11 +583,6 @@ namespace crl
     {}
 
     //---------------------------------------------------------
-    HMTime::HMTime(const double time, const int precision) noexcept
-        : Time{ time, precision }
-    {}
-
-    //---------------------------------------------------------
     HMTime::HMTime(const std::string& time) noexcept
         : Time{}
     {
@@ -545,7 +599,7 @@ namespace crl
     //---------------------------------------------------------
     void HMTime::_evaluate_time(const std::string& str) noexcept
     {
-        // HHH:MM:SS.frac
+        // HHH:MM
         std::smatch time_matches;
 
         if (std::regex_search(str, time_matches, std::regex("^(\\d\\d*):(\\d\\d)"))) {
@@ -557,7 +611,7 @@ namespace crl
             _error_msg.clear();
         }
         else {
-            _error_msg = std::format("erroneous format for 'hours::minutes' time string: '{}'", str);
+            _error_msg = std::format("erroneous format for 'hours:minutes' time string: '{}'", str);
         }
     };
 
@@ -600,7 +654,7 @@ namespace crl
             _error_msg.clear();
         }
         else {
-            _error_msg = std::format("erroneous format for 'minutes::seconds + fraction' time string: '{}'", str);
+            _error_msg = std::format("erroneous format for 'minutes:seconds + fraction' time string: '{}'", str);
         }
     }
 
