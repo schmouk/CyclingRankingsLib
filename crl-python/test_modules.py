@@ -17,10 +17,16 @@ t2 = MSTime(20, 30)
 print(f'MSTime(20, 30) = {str(t2)}')
 t3 = t1 + t2
 print(f'Time(1, 30, 45) + MSTime(20, 30) = {str(t3)}')
+t3.set("00:01:23.456")
+print(f'Time("00:01:23.456") = {str(t3)}')
 
 # Test from string
 t4 = StrTime('2:15:30.5')
 print(f'Time("2:15:30.5") = {str(t4)}')
+
+# Test deep copy
+t1.set(t4);
+print(f'deep copy of {str(t4)} = {str(t1)}')
 
 # Test constants
 print(f'RANK_DNS = {RANK_DNS}')

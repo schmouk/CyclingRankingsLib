@@ -22,14 +22,17 @@ https://github.com/schmouk/CyclingRankingsLib/blob/main/LICENSE).
 If not, see <https://www.gnu.org/licenses/>.
 """
 
+import copy
 import re
 import sys
-from typing import Optional, Union
+from typing import Optional
 
 
 #======   Time Fraction of Seconds   ==========================
 class SecondFraction:
     """Represents a fraction of seconds for time calculations."""
+
+    __slots__ = ["precision", "value"]
 
     #----------------------------------------------------------
     def __init__(self, value: int = 0, precision: int = 1) -> None:
@@ -103,6 +106,8 @@ class Time:
     This is the base class for all other TimeXYZ classes.
     """
 
+    __slots__ = ["_error_msg", "_fraction", "_seconds"]
+
     #----------------------------------------------------------
     def __init__(
         self,
@@ -142,6 +147,20 @@ class Time:
             return sys.maxsize
 
     #----------------------------------------------------------
+    def set(self, other: Time | str) -> Time:
+        """Deep copy of another Time object."""
+        if isinstance(other, Time):
+            self._seconds = other._seconds
+            self._fraction = copy.copy(other._fraction)
+            self.clr_error()
+
+        elif isinstance(other, str):
+            self._evaluate_str(other)
+
+        else:
+            self._error_msg = f'bad type for method "set()" argument: {type(other)} is neither Time nor str.'
+
+    #----------------------------------------------------------
     def __float__(self) -> float:
         """Convert to float."""
         return float(self._seconds) + float(self._fraction)
@@ -161,9 +180,9 @@ class Time:
             return f"{h}:{m:02d}:{s:02d}{frac}"
 
         if m > 0:
-            return f"{m:2d}:{s:02d}{frac}"
+            return f"{m:d}:{s:02d}{frac}"
 
-        return f"{s:2d}{frac}"
+        return f"{s:d}{frac}"
 
     #----------------------------------------------------------
     def __add__(self, other: 'Time') -> 'Time':
@@ -202,7 +221,7 @@ class Time:
         elif other.is_ok():
             # Special operation: fractions are added, but not to seconds
             self._seconds += other._seconds
-            self._error_msg = ""
+            self.clr_error()
             self._fraction += other._fraction
         else:
             self._error_msg = f"attempt to add an erroneous time ({other._error_msg}) -> no addition"
@@ -217,7 +236,7 @@ class Time:
         elif other.is_ok():
             # Substraction involves only seconds, not fractions
             if other._seconds <= self._seconds:
-                self._error_msg = ""
+                self.clr_error()
                 self._seconds -= other._seconds
             else:
                 self._error_msg = (
@@ -229,6 +248,10 @@ class Time:
             self._error_msg = f"attempt to substract an erroneous time ({other._error_msg}) -> no substraction"
 
         return self
+
+    #----------------------------------------------------------
+    def clr_error(self) -> None:
+        self._error_msg = ""
 
     #----------------------------------------------------------
     def is_ok(self) -> bool:
@@ -267,12 +290,12 @@ class Time:
         if self._fraction.precision == 0:
             self._error_msg = "bad value for precision on fractions of seconds: 0"
         else:
-            self._error_msg = ""
+            self.clr_error()
 
     #----------------------------------------------------------
     def _evaluate_frac(self, frac_str: str, frac_precision: Optional[str] = None) -> None:
         """Evaluate fraction from string representation."""
-        self._error_msg = ""
+        self.clr_error()
 
         if not frac_str:
             self._fraction = SecondFraction(0, 1)
@@ -298,6 +321,106 @@ class Time:
                 case _:
                     self._fraction = SecondFraction(int(frac_str[:3]), 1000)
 
+    #----------------------------------------------------------
+    def _evaluate_str(self, time_str: str) -> None:
+        """Evaluates the time score from a formatted string."""
+        if (self._evaluate_hms_frac(time_str) or
+                self._evaluate_hms_ratio(time_str) or
+                    self._evaluate_ms_frac(time_str) or
+                        self._evaluate_s_frac(time_str) or
+                            self._evaluate_ms_ratio(time_str) or
+                                self._evaluate_s_ratio(time_str)):
+            # Found a match, things are fine
+            return;
+
+        # Otherwise: no match found, form of time is erroneous
+        self._error_msg = f"erroneous format for time string : '{time_str}'"
+
+    #----------------------------------------------------------
+    def _evaluate_hms_ratio(self, time_str: str) -> bool:
+        # HHH:MM:SS frac_val/frac_precision
+        match = re.search(r'^(\d\d*):(\d\d):(\d\d) (\d+)/(\d+)', time_str)
+        if match:
+            h = int(match.group(1))
+            m = int(match.group(2))
+            s = int(match.group(3))
+            self._seconds = 3600 * h + 60 * m + s
+            self._evaluate_frac(match.group(4), match.group(5))
+            self.clr_error()
+            return True
+        else:
+            return False
+
+    #----------------------------------------------------------
+    def _evaluate_hms_frac(self, time_str: str) -> bool:
+        # HHH:MM:SS.frac
+        match = re.search(r'^(\d\d*):(\d\d):(\d\d)(\.(\d+))?', time_str)
+        if match:
+            h = int(match.group(1))
+            m = int(match.group(2))
+            s = int(match.group(3))
+            self._seconds = 3600 * h + 60 * m + s
+            self._evaluate_frac(match.group(5) if match.group(5) else "")
+            self.clr_error()
+            return True
+        else:
+            return False
+        
+    #----------------------------------------------------------
+    def _evaluate_ms_ratio(self, time_str: str) -> bool:
+        # MM:SS frac_val/frac_precision
+        match = re.search(r'^(\d\d?):(\d\d) (\d+)/(\d+)', time_str)
+        if match:
+            m = int(match.group(1))
+            s = int(match.group(2))
+            self._seconds = 60 * m + s
+            self._evaluate_frac(match.group(3), match.group(4))
+            self.clr_error()
+            return True
+        else:
+            return False
+
+    #----------------------------------------------------------
+    def _evaluate_ms_frac(self, time_str: str) -> bool:
+        # MM:SS.frac
+        match = re.search(r'^(\d\d*):(\d\d)(\.(\d+))?', time_str)
+        if match:
+            m = int(match.group(1))
+            s = int(match.group(2))
+            self._seconds = 60 * m + s
+            self._evaluate_frac(match.group(4) if match.group(4) else "")
+            self.clr_error()
+            return True
+        else:
+            return False
+
+    #----------------------------------------------------------
+    def _evaluate_s_ratio(self, time_str: str) -> bool:
+        # SS frac_val/frac_precision
+        match = re.search(r'^(\d\d?) (\d+)/(\d+)', time_str)
+        if match:
+            s = int(match.group(1))
+            self._seconds = s
+            self._evaluate_frac(match.group(2), match.group(3))
+            self.clr_error()
+            return True
+        else:
+            return False
+        
+    #----------------------------------------------------------
+    def _evaluate_s_frac(self, time_str: str) -> bool:
+        # SS.frac
+        match = re.search(r'^(\d\d?)(\.(\d+))?', time_str)
+        if match:
+            s = int(match.group(1))
+            self._seconds = s
+            self._evaluate_frac(match.group(3) if match.group(3) else "")
+            self.clr_error()
+            return True
+        else:
+            return False
+
+
 
 #=====   Time Scores - HMS class   ============================
 class HMSTime(Time):
@@ -311,6 +434,41 @@ class HMSTime(Time):
         frac_prec: Optional[int] = None
     ) -> None:
         super().__init__(h, m, s, frac_val, frac_prec)
+     
+    #----------------------------------------------------------
+    def _evaluate_str(self, time_str: str) -> None:
+        """Evaluates the time score from a formatted string."""
+        if self._evaluate_hms_frac(time_str) or self._evaluate_hms_ratio(time_str):
+            # Found a match, things are fine
+            return;
+
+        # Otherwise: no match found, form of time is erroneous
+        self._error_msg = f"erroneous format for HMSTime string : '{time_str}'"
+
+
+#=====   Time Scores - HM class   ============================
+class HMTime(Time):
+    #----------------------------------------------------------
+    def __init__(
+        self,
+        h: Optional[int] = None,
+        m: Optional[int] = None
+    ) -> None:
+        super().__init__(h, m, None, None, None)
+        
+    #----------------------------------------------------------
+    def _evaluate_str(self, time_str: str) -> None:
+        """Evaluates the time score from a formatted string."""
+        # HHH:MM
+        match = re.search(r'^(\d\d*):(\d\d)', time_str)
+        if match:
+            # Found a match, things are fine
+            self._seconds = 3600 * match[1] + 60 * match[2]
+            self.clr_error()
+            return
+
+        # Otherwise: no match found, form of time is erroneous
+        self._error_msg = f"erroneous format for 'hours:minutes' string : '{time_str}'"
 
 
 #=====   Time Scores - MS class   =============================
@@ -324,6 +482,16 @@ class MSTime(Time):
         frac_prec: Optional[int] = None
     ) -> None:
         super().__init__(0, m, s, frac_val, frac_prec)
+             
+    #----------------------------------------------------------
+    def _evaluate_str(self, time_str: str) -> None:
+        """Evaluates the time score from a formatted string."""
+        if self._evaluate_ms_frac(time_str) or self._evaluate_ms_ratio(time_str):
+            # Found a match, things are fine
+            return;
+
+        # Otherwise: no match found, form of time is erroneous
+        self._error_msg = f"erroneous format for MSTime string : '{time_str}'"
 
 
 #=====   Time Scores - S class   ==============================
@@ -336,6 +504,16 @@ class STime(Time):
         frac_prec: Optional[int] = None
     ) -> None:
         super().__init__(0, 0, s, frac_val, frac_prec)
+             
+    #----------------------------------------------------------
+    def _evaluate_str(self, time_str: str) -> None:
+        """Evaluates the time score from a formatted string."""
+        if self._evaluate_s_frac(time_str) or self._evaluate_s_ratio(time_str):
+            # Found a match, things are fine
+            return;
+
+        # Otherwise: no match found, form of time is erroneous
+        self._error_msg = f"erroneous format for STime string : '{time_str}'"
 
 
 #=====   Time Scores - creation from float value   ============
@@ -360,7 +538,7 @@ class FltTime(Time):
             
 #=====   Time Scores - creation from str value   ==============
 class StrTime(Time):
-#----------------------------------------------------------
+    #----------------------------------------------------------
     def __init__(self, time_str: str) -> None:
         """Evaluate time from string representation.
 
@@ -373,7 +551,9 @@ class StrTime(Time):
         - SS.frac
         """
         super().__init__()
+        self._evaluate_str(time_str)
 
+        r""" Notice: to be removed once this module will have been validated
         # HHH:MM:SS frac_val/frac_precision
         match = re.search(r'^(\d\d*):(\d\d):(\d\d) (\d+)/(\d+)', time_str)
         if match:
@@ -427,3 +607,4 @@ class StrTime(Time):
             self._seconds = s
             self._evaluate_frac(match.group(3) if match.group(3) else "")
             return
+        """
