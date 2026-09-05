@@ -30,6 +30,18 @@
 
 namespace crl
 {
+    /** This file declares next classes:
+    *
+    * class SecondFraction; // Fractions of seconds coded as a fractional value : numerator (value) and denominator (precision).
+    * class Time;     // Base class for all time scores classes.
+    * 
+    * class HMSTime;  // Time scores set as "<hours>::<minutes>::<seconds>[.<frac>]".
+    * class HMTime;   // Time scores set as "<hours>::<minutes>" - i.e. no seconds.
+    * class MSTime;   // Time scores set as "<minutes>::<seconds>[.<frac>]".
+    * class STime;    // Time scores set as "<seconds>[.<frac>]".
+    /**/ 
+
+
     //=====   Time Fraction of Seconds   ======================
     class SecondFraction
     {
@@ -59,19 +71,12 @@ namespace crl
         Time(const std::uint16_t h, const std::uint8_t m, const std::uint8_t s, const SecondFraction frac) noexcept;
         Time(const std::uint16_t h, const std::uint8_t m, const std::uint8_t s) noexcept;
 
-        Time(const std::uint8_t  m, const std::uint8_t s, const std::uint16_t frac_val, const std::uint16_t frac_prec) noexcept;
-        Time(const std::uint8_t  m, const std::uint8_t s, const SecondFraction frac) noexcept;
-        Time(const std::uint8_t  m, const std::uint8_t s) noexcept;
-
-        Time(const std::uint8_t  s, const std::uint16_t frac_val, const std::uint16_t frac_prec) noexcept;
-        Time(const std::uint8_t  s, const SecondFraction frac) noexcept;
-        explicit Time(const unsigned int s) noexcept;
-
         explicit Time(const double time, const int precision = 0) noexcept;  // mostly used values for precision: 0, 5, 10, 100, 1000
 
         explicit Time(const std::string& time) noexcept;
         explicit Time(const char* time) noexcept;
 
+        Time() noexcept = default;
         virtual ~Time() noexcept = default;
 
         Time(const Time&) noexcept = default;
@@ -104,20 +109,107 @@ namespace crl
         const std::string& get_error_message() const noexcept;
 
 
-    private:
+    protected:
         //-----------------------------------------------------
         std::int32_t   _seconds{ 0 };
         SecondFraction _fraction{ 0, 1 };
         std::string    _error_msg{};
 
         //-----------------------------------------------------
+        virtual void _evaluate_time(const std::string& time_str) noexcept;
+
+        const bool _evaluate_hms_ratio(const std::string& time_str) noexcept;
+        const bool _evaluate_hms_frac(const std::string& time_str) noexcept;
+        const bool _evaluate_ms_ratio(const std::string& time_str) noexcept;
+        const bool _evaluate_ms_frac(const std::string& time_str) noexcept;
+        const bool _evaluate_s_ratio(const std::string& time_str) noexcept;
+        const bool _evaluate_s_frac(const std::string& time_str) noexcept;
+
+
+    private:
+        //-----------------------------------------------------
         void _evaluate_data(const std::uint16_t h, const std::uint8_t m, const std::uint8_t s, const SecondFraction frac) noexcept;
         void _evaluate_data(const std::uint16_t h, const std::uint8_t m, const std::uint8_t s) noexcept;
         void _evaluate_frac(const std::string& frac_str) noexcept;
         void _evaluate_frac(const std::string& frac_value, const std::string& frac_precision) noexcept;
-        void _evaluate_time(const std::string& str) noexcept;
 
     };
 
+
+    //=====   HMS Time Scores   ===============================
+    using HMSTime = Time;
+
+
+    //=====   HMTime   ========================================
+    class HMTime : public Time
+    {
+    public:
+        HMTime(const std::uint16_t h, const std::uint8_t m) noexcept;
+
+        explicit HMTime(const double time, const int precision = 0) noexcept;  // mostly used values for precision: 0, 5, 10, 100, 1000
+
+        explicit HMTime(const std::string& time) noexcept;
+        explicit HMTime(const char* time) noexcept;
+
+        virtual ~HMTime() noexcept = default;
+
+        HMTime(const HMTime&) noexcept = default;
+        HMTime(HMTime&&) noexcept = default;
+
+
+    protected:
+        void _evaluate_time(const std::string& str) noexcept override;
+
+    };
+
+
+    //=====   MSTime   ========================================
+    class MSTime : public Time
+    {
+    public:
+        MSTime(const std::uint8_t m, const std::uint8_t s, const std::uint16_t frac_val, const std::uint16_t frac_prec) noexcept;
+        MSTime(const std::uint8_t m, const std::uint8_t s, const SecondFraction frac) noexcept;
+        MSTime(const std::uint8_t m, const std::uint8_t s) noexcept;
+
+        explicit MSTime(const double time, const int precision = 0) noexcept;  // mostly used values for precision: 0, 5, 10, 100, 1000
+
+        explicit MSTime(const std::string& time) noexcept;
+        explicit MSTime(const char* time) noexcept;
+
+        virtual ~MSTime() noexcept = default;
+
+        MSTime(const MSTime&) noexcept = default;
+        MSTime(MSTime&&) noexcept = default;
+
+
+    protected:
+        void _evaluate_time(const std::string& str) noexcept override;
+
+    };
+
+
+    //=====   STime   =========================================
+    class STime : public Time
+    {
+    public:
+        STime(const std::uint8_t s, const std::uint16_t frac_val, const std::uint16_t frac_prec) noexcept;
+        STime(const std::uint8_t s, const SecondFraction frac) noexcept;
+        STime(const unsigned int s) noexcept;
+
+        explicit STime(const double time, const int precision = 0) noexcept;  // mostly used values for precision: 0, 5, 10, 100, 1000
+
+        explicit STime(const std::string& time) noexcept;
+        explicit STime(const char* time) noexcept;
+
+        virtual ~STime() noexcept = default;
+
+        STime(const STime&) noexcept = default;
+        STime(STime&&) noexcept = default;
+
+
+    protected:
+        void _evaluate_time(const std::string& str) noexcept override;
+
+    };
 
 }

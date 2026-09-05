@@ -24,6 +24,7 @@
     <ProjectGuid>{6186ce83-aed6-47e4-aa98-e9424938304e}</ProjectGuid>
     <RootNamespace>cpp</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>crl-cpp</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <ctime>
 #include <format>
 #include <limits>
 #include <regex>
@@ -106,60 +107,35 @@ namespace crl
 
     //=====   Time Scores   ===================================
     //---------------------------------------------------------
-    Time::Time(const std::uint16_t h, const std::uint8_t m, const std::uint8_t s, const std::uint16_t frac_val, const std::uint16_t frac_prec) noexcept
+    Time::Time(
+        const std::uint16_t h,
+        const std::uint8_t  m,
+        const std::uint8_t  s,
+        const std::uint16_t frac_val,
+        const std::uint16_t frac_prec
+    ) noexcept
     {
         _evaluate_data(h, m, s, SecondFraction{ frac_val, frac_prec });
     }
 
     //---------------------------------------------------------
-    Time::Time(const std::uint16_t h, const std::uint8_t m, const std::uint8_t s, const SecondFraction frac) noexcept
+    Time::Time(
+        const std::uint16_t h,
+        const std::uint8_t  m,
+        const std::uint8_t  s,
+        const SecondFraction frac) noexcept
     {
         _evaluate_data(h, m, s, frac);
     }
 
     //---------------------------------------------------------
-    Time::Time(const std::uint16_t h, const std::uint8_t m, const std::uint8_t s) noexcept
+    Time::Time(
+        const std::uint16_t h,
+        const std::uint8_t  m,
+        const std::uint8_t  s
+    ) noexcept
     {
         _evaluate_data(h, m, s);
-    }
-
-    //---------------------------------------------------------
-    Time::Time(const std::uint8_t m, const std::uint8_t s, const std::uint16_t frac_val, const std::uint16_t frac_prec) noexcept
-    {
-        _evaluate_data(0, m, s, SecondFraction{ frac_val, frac_prec });
-    }
-
-    //---------------------------------------------------------
-    Time::Time(const std::uint8_t m, const std::uint8_t s, const SecondFraction frac) noexcept
-    {
-        _evaluate_data(0, m, s, frac);
-    }
-
-    //---------------------------------------------------------
-    Time::Time(const std::uint8_t m, const std::uint8_t s) noexcept
-    {
-        _evaluate_data(0, m, s);
-    }
-
-    //---------------------------------------------------------
-    Time::Time(const std::uint8_t s, const std::uint16_t frac_val, const std::uint16_t frac_prec) noexcept
-    {
-        _evaluate_data(0, 0, s, SecondFraction{ frac_val, frac_prec });
-    }
-
-    //---------------------------------------------------------
-    Time::Time(const std::uint8_t s, const SecondFraction frac) noexcept
-    {
-        _evaluate_data(0, 0, s, frac);
-    }
-
-    //---------------------------------------------------------
-    Time::Time(const unsigned int s) noexcept
-    {
-        if (s < 60)
-            _evaluate_data(0, 0, s);
-        else
-            _evaluate_data(s / 3600, (s % 3600) / 60, s % 60);
     }
 
     //---------------------------------------------------------
@@ -183,14 +159,14 @@ namespace crl
     //---------------------------------------------------------
     Time::Time(const std::string& time) noexcept
     {
-        _evaluate_time(time);
+        _evaluate_time(time.c_str());
     }
 
     //---------------------------------------------------------
     Time::Time(const char* time) noexcept
     {
         if (time)
-            _evaluate_time(std::string(time));
+            _evaluate_time(time);
     }
 
     //---------------------------------------------------------
@@ -292,9 +268,9 @@ namespace crl
             return std::format("{}:{:02d}:{:02d}{}", h, m, s, frac);
         
         if (m > 0)
-            return std::format("{:2d}:{:02d}{}", m, s, frac);
+            return std::format("{:d}:{:02d}{}", m, s, frac);
 
-        return std::format("{:2d}{}", s, frac);
+        return std::format("{:d}{}", s, frac);
     }
 
     //---------------------------------------------------------
@@ -396,11 +372,31 @@ namespace crl
     //-----------------------------------------------------
     void Time::_evaluate_time(const std::string& time_str) noexcept
     {
-        std::smatch time_matches;
-
         // HHH:MM:SS frac_val/frac_precision
+        if (_evaluate_hms_frac(time_str)  ||
+            _evaluate_hms_ratio(time_str) ||
+            _evaluate_ms_frac(time_str)   ||
+            _evaluate_s_frac(time_str)    ||
+            _evaluate_ms_ratio(time_str)  ||
+            _evaluate_s_ratio(time_str)     )
+        {
+            // some match found, things are fine
+            return;
+        }
+
+        // otherwise: no match found, form of time is erroneous
+        _error_msg = std::format("erroneous format for time string : '{}'", time_str);
+    }
+
+    //---------------------------------------------------------
+    const bool Time::_evaluate_hms_ratio(const std::string& time_str) noexcept
+    {
+        // HHH:MM:SS frac_val/frac_precision
+        std::smatch time_matches;
+        _error_msg.clear();
+
         if (std::regex_search(time_str, time_matches,
-                std::regex("^(\\d\\d*):(\\d\\d):(\\d\\d) (\\d+)/(\\d+)")))
+            std::regex("^(\\d\\d*):(\\d\\d):(\\d\\d) (\\d+)/(\\d+)")))
         {
             // Match h, m, s and fraction!
             const std::int32_t h{ std::stol(time_matches[1]) };
@@ -409,12 +405,21 @@ namespace crl
             _seconds = 3600 * h + 60 * m + s;
 
             _evaluate_frac(time_matches[4], time_matches[5]);
-            return;
+            return true;
         }
 
+        return false;
+    }
+
+    //---------------------------------------------------------
+    const bool Time::_evaluate_hms_frac(const std::string& time_str) noexcept
+    {
         // HHH:MM:SS.frac
+        std::smatch time_matches;
+        _error_msg.clear();
+
         if (std::regex_search(time_str, time_matches,
-                std::regex("^(\\d\\d*):(\\d\\d):(\\d\\d)(\\.(\\d+))?")))
+            std::regex("^(\\d\\d*):(\\d\\d):(\\d\\d)(\\.(\\d+))?")))
         {
             // Match h, m, s and maybe fraction!
             const std::int32_t h{ std::stol(time_matches[1]) };
@@ -423,12 +428,21 @@ namespace crl
             _seconds = 3600 * h + 60 * m + s;
 
             _evaluate_frac(time_matches[5]);
-            return;
+            return true;
         }
 
+        return false;
+    }
+
+    //---------------------------------------------------------
+    const bool Time::_evaluate_ms_ratio(const std::string& time_str) noexcept
+    {
         // MM:SS frac_val/frac_precision
+        std::smatch time_matches;
+        _error_msg.clear();
+
         if (std::regex_search(time_str, time_matches,
-                std::regex("^(\\d\\d?):(\\d\\d) (\\d+)/(\\d+)")))
+            std::regex("^(\\d\\d?):(\\d\\d) (\\d+)/(\\d+)")))
         {
             // Match m, s and fraction!
             const std::int32_t m{ std::stol(time_matches[1]) };
@@ -436,10 +450,19 @@ namespace crl
             _seconds = 60 * m + s;
 
             _evaluate_frac(time_matches[3], time_matches[4]);
-            return;
+            return true;
         }
 
+        return false;
+    }
+
+    //---------------------------------------------------------
+    const bool Time::_evaluate_ms_frac(const std::string& time_str) noexcept
+    {
         // MM:SS.frac
+        std::smatch time_matches;
+        _error_msg.clear();
+
         if (std::regex_search(time_str, time_matches,
             std::regex("^(\\d\\d*):(\\d\\d)(\\.(\\d+))?")))
         {
@@ -449,29 +472,180 @@ namespace crl
             _seconds = 60 * m + s;
 
             _evaluate_frac(time_matches[4]);
-            return;
+            return true;
         }
 
+        return false;
+    }
+
+    //---------------------------------------------------------
+    const bool Time::_evaluate_s_ratio(const std::string& time_str) noexcept
+    {
         // SS frac_val/frac_precision
+        std::smatch time_matches;
+        _error_msg.clear();
+
         if (std::regex_search(time_str, time_matches,
             std::regex("^(\\d\\d?) (\\d+)/(\\d+)")))
         {
             // Match s and fraction!
             _seconds = std::stol(time_matches[1]);
             _evaluate_frac(time_matches[2], time_matches[3]);
-            return;
+            return true;
         }
 
+        return false;
+    }
+
+    //---------------------------------------------------------
+    const bool Time::_evaluate_s_frac(const std::string& time_str) noexcept
+    {
         // SS.frac
+        std::smatch time_matches;
+        _error_msg.clear();
+
         if (std::regex_search(time_str, time_matches,
             std::regex("^(\\d\\d?)(\\.(\\d+))?")))
         {
             // Match s and maybe fraction!
             _seconds = std::stol(time_matches[1]);
             _evaluate_frac(time_matches[3]);
-            return;
+            return true;
         }
 
+        return false;
+    }
+
+
+    //=====   HMTime   ========================================
+    //---------------------------------------------------------
+    HMTime::HMTime(const std::uint16_t h, const std::uint8_t m) noexcept
+        : Time{ h, m, 0 }
+    {}
+
+    //---------------------------------------------------------
+    HMTime::HMTime(const double time, const int precision) noexcept
+        : Time{ time, precision }
+    {}
+
+    //---------------------------------------------------------
+    HMTime::HMTime(const std::string& time) noexcept
+        : Time{}
+    {
+        _evaluate_time(time);
+    }
+
+    //---------------------------------------------------------
+    HMTime::HMTime(const char* time) noexcept
+        : Time{}
+    {
+        _evaluate_time(std::string(time));
+    }
+
+    //---------------------------------------------------------
+    void HMTime::_evaluate_time(const std::string& str) noexcept
+    {
+        // HHH:MM:SS.frac
+        std::smatch time_matches;
+
+        if (std::regex_search(str, time_matches, std::regex("^(\\d\\d*):(\\d\\d)"))) {
+            // Match h, m found!
+            const std::int32_t h{ std::stol(time_matches[1]) };
+            const std::int32_t m{ std::stol(time_matches[2]) };
+            _seconds = 3600 * h + 60 * m;
+
+            _error_msg.clear();
+        }
+        else {
+            _error_msg = std::format("erroneous format for 'hours::minutes' time string: '{}'", str);
+        }
+    };
+
+
+    //=====   MSTime   ========================================
+    //---------------------------------------------------------
+    MSTime::MSTime(const std::uint8_t m, const std::uint8_t s, const std::uint16_t frac_val, const std::uint16_t frac_prec) noexcept
+        : Time{ 0, m, s, frac_val, frac_prec }
+    {}
+
+    //---------------------------------------------------------
+    MSTime::MSTime(const std::uint8_t m, const std::uint8_t s, const SecondFraction frac) noexcept
+        : Time{ 0, m, s, frac }
+    {}
+
+    //---------------------------------------------------------
+    MSTime::MSTime(const std::uint8_t m, const std::uint8_t s) noexcept
+        : Time{ 0, m, s }
+    {}
+
+    //---------------------------------------------------------
+    MSTime::MSTime(const double time, const int precision) noexcept
+        : Time{ time, precision }
+    {}
+
+    //---------------------------------------------------------
+    MSTime::MSTime(const std::string& time) noexcept
+        : Time{ time }
+    {}
+
+    //---------------------------------------------------------
+    MSTime::MSTime(const char* time) noexcept
+        : Time{ time }
+    {}
+
+    //---------------------------------------------------------
+    void MSTime::_evaluate_time(const std::string& str) noexcept
+    {
+        if (_evaluate_ms_frac(str) || _evaluate_ms_ratio(str)) {
+            _error_msg.clear();
+        }
+        else {
+            _error_msg = std::format("erroneous format for 'minutes::seconds + fraction' time string: '{}'", str);
+        }
+    }
+
+
+    //=====   STime   =========================================
+    //---------------------------------------------------------
+    STime::STime(const std::uint8_t s, const std::uint16_t frac_val, const std::uint16_t frac_prec) noexcept
+        : Time{ 0, 0, s, frac_val, frac_prec }
+    {}
+
+    //---------------------------------------------------------
+    STime::STime(const std::uint8_t s, const SecondFraction frac) noexcept
+        : Time{ 0, 0, s, frac }
+    {}
+
+    //---------------------------------------------------------
+    STime::STime(const unsigned int s) noexcept
+        : Time{ static_cast<double>(s) }
+    {}
+
+    //---------------------------------------------------------
+    STime::STime(const double time, const int precision) noexcept
+        : Time{ time, precision }
+    {}
+
+    //---------------------------------------------------------
+    STime::STime(const std::string& time) noexcept
+        : Time{ time }
+    {}
+
+    //---------------------------------------------------------
+    STime::STime(const char* time) noexcept
+        : Time{ time }
+    {}
+
+    //---------------------------------------------------------
+    void STime::_evaluate_time(const std::string& str) noexcept
+    {
+        if (_evaluate_s_frac(str) || _evaluate_s_ratio(str)) {
+            _error_msg.clear();
+        }
+        else {
+            _error_msg = std::format("erroneous format for 'seconds + fraction' time string: '{}'", str);
+
+        }
     }
 
 }
