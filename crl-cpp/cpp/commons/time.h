@@ -24,6 +24,7 @@
 * If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <concepts>
 #include <cstdint>
 #include <string>
 
@@ -46,8 +47,8 @@ namespace crl
     class SecondFraction
     {
     public:
-        std::uint16_t value;      // Notice: value may be greater than precision (in a few circumstances)
-        std::uint16_t precision;  // Notice: mostly frequent precision values are 5, 10, 100 or 1000 (-th of second)
+        std::uint16_t value{ 0 };      // Notice: value may be greater than precision (in a few circumstances)
+        std::uint16_t precision{ 1 };  // Notice: mostly frequent precision values are 5, 10, 100 or 1000 (-th of second)
 
         operator double() const noexcept;
         operator std::string() const noexcept;
@@ -119,6 +120,10 @@ namespace crl
         const std::string& get_error_message() const noexcept;
 
 
+        //-----   Accessors   ---------------------------------
+        const std::uint16_t get_precision() const noexcept;
+
+
     protected:
         //-----------------------------------------------------
         std::int32_t   _seconds{ 0 };
@@ -144,6 +149,11 @@ namespace crl
         void _evaluate_frac(const std::string& frac_value, const std::string& frac_precision) noexcept;
 
     };
+
+
+    //=====   Time Concept   ==================================
+    template<typename TimeT>
+    concept type_type = std::derived_from<TimeT, Time>;
 
 
     //=====   HMS Time Scores   ===============================

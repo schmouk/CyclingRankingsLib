@@ -173,7 +173,7 @@ namespace crl
         }
         else {
             _fraction = SecondFraction{
-                static_cast<std::uint16_t>(precision * _frac_part),
+                static_cast<std::uint16_t>(std::round(precision * _frac_part)),  // Notice: this rounding is mandatory due to 'double' imprecision
                 static_cast<std::uint16_t>(precision)
             };
         }  
@@ -371,6 +371,12 @@ namespace crl
     const std::string& Time::get_error_message() const noexcept
     {
         return _error_msg;
+    }
+
+    //-----------------------------------------------------
+    const std::uint16_t Time::get_precision() const noexcept
+    {
+        return _fraction.precision > 0 ? _fraction.precision : 1;
     }
 
     //-----------------------------------------------------

@@ -30,6 +30,9 @@
     <ClInclude Include="utils\random.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="utils\average_speed.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cpp.cpp">
@@ -39,6 +42,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="utils\random.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="utils\average_speed.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
