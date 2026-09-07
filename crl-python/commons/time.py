@@ -46,6 +46,10 @@ class SecondFraction:
         self.precision: int = precision
 
     #----------------------------------------------------------
+    def __bool__(self) -> bool:
+        return self.value == 0 and self.precision == 1
+
+    #----------------------------------------------------------
     def __float__(self) -> float:
         """Convert fraction to float."""
         try:
@@ -60,13 +64,13 @@ class SecondFraction:
             case 0 | 1:
                 return ""
             case 10:
-                return f".{self.value}"
+                return f"{self.value}"
             case 100:
-                return f".{self.value:02d}"
+                return f"{self.value:02d}"
             case 1000:
-                return f".{self.value:03d}"
+                return f"{self.value:03d}"
             case _:
-                return f" {self.value}/{self.precision}"
+                return f"{self.value}/{self.precision}"
 
     #----------------------------------------------------------
     def __iadd__(self, other: 'SecondFraction') -> 'SecondFraction':
@@ -116,13 +120,60 @@ class SecondFraction:
         return (a // SecondFraction._gcd(a, b)) * b
 
 
+#=====   Localization of time separators   ====================
+class LocalTimeSeps:
+    """Time separators can be localized!"""
+    __slots__ = ["force_sec_sep", "seps"]
+
+    def __init__(self, time_seps: str, force_sec_sep: bool = False):
+        self.seps = time_seps if len(time_seps) == 3 else "::."
+        self.force_sec_sep = force_sec_sep
+        
+    _H_SEP, _M_SEP, _S_SEP = 0, 1, 2
+
+    @property
+    def h_sep(self):
+       return self.seps[self._H_SEP]
+
+    @property
+    def m_sep(self):
+       return self.seps[self._M_SEP]
+
+    @property
+    def s_sep(self):
+       return self.seps[self._S_SEP]
+
+
+InternationalTimeSeps = LocalTimeSeps("::.")
+DutchTimeSeps         = LocalTimeSeps("um,")
+EuropeanTimeSeps      = LocalTimeSeps("::,")
+FrenchTimeSeps        = LocalTimeSeps("h'\"", True)
+
+
 #=====   Time Scores - Base class   ===========================
 class Time:
     """Represents a time value with seconds and fractions.
     This is the base class for all other TimeXYZ classes.
     """
 
-    __slots__ = ["_error_msg", "_fraction", "_seconds"]
+    __slots__ = ["_error_msg", "_fraction", "_local", "_seconds", "_time_hms_sep"]
+
+    #----------------------------------------------------------
+    @property
+    def _h_sep(self) -> str:
+        return self._local.h_sep
+
+    @property
+    def _m_sep(self) -> str:
+        return self._local.m_sep
+
+    @property
+    def _s_sep(self) -> str:
+        return self._local.s_sep
+
+    @property
+    def _force_s_sep(self) -> str:
+        return self._local.force_sec_sep
 
     #----------------------------------------------------------
     def __init__(
@@ -134,6 +185,9 @@ class Time:
         frac_prec: Optional[int] = None
     ) -> None:
         """Initialize a Time object."""
+        self._local = InternationalTimeSeps
+        self.clr_error()
+
         # Determines which constructor pattern was used
         if h is None:
             # Empty constructor
@@ -141,11 +195,18 @@ class Time:
             self._fraction: SecondFraction = SecondFraction(0, 1)
             self._error_msg: str = ""
 
+        elif isinstance(h, str):
+            # Str constructor
+            self._evaluate_str(h)
+            if m or s or frac_val or frac_prec:
+                f"Erroneous args passing at Time creation: ({h}, {m}, {s}, {frac_val}, {frac_prec})"
+
         elif m is None or s is None:
             # Erroneous constructor
             self._seconds: int = 0
             self._fraction: SecondFraction = SecondFraction(0, 1)
-            self._error_msg: str = f"Erroneous format for creation of a Time: ({h}:{m}:{s})"
+            self._error_msg: str = \
+                f"Erroneous format for creation of a Time: ({h}{self._h_sep}{m}{self._m_sep}{s})"
 
         else:
             self._evaluate_data(h, m, s, frac_val, frac_prec)
@@ -174,7 +235,7 @@ class Time:
             self._evaluate_str(other)
 
         else:
-            self._error_msg = f'bad type for method "set()" argument: {type(other)} is neither Time nor str.'
+            self._error_msg = f'bad type for method "set()" argument: argument type must be either Time or str (currently is {type(other)}).'
 
     #----------------------------------------------------------
     def __float__(self) -> float:
@@ -193,12 +254,18 @@ class Time:
         frac = str(self._fraction)
 
         if h > 0:
-            return f"{h}:{m:02d}:{s:02d}{frac}"
+            if frac:
+                return f"{h}{self._h_sep}{m:02d}{self._m_sep}{s:02d}{self._s_sep}{frac}"
+            else:
+                return f"{h}{self._h_sep}{m:02d}{self._m_sep}{s:02d}" + (self._s_sep if self._force_s_sep else "")
 
         if m > 0:
-            return f"{m:d}:{s:02d}{frac}"
+            if frac:
+                return f"{m:d}{self._m_sep}{s:02d}{self._s_sep}{frac}"
+            else:
+                return f"{m:d}{self._m_sep}{s:02d}" + (self._s_sep if self._force_s_sep else "")
 
-        return f"{s:d}{frac}"
+        return f"{s:d}{self._s_sep}{frac}" if frac else f"{s:d}" + (self._s_sep if self._force_s_sep else "")
 
     #----------------------------------------------------------
     def __add__(self, other: 'Time') -> 'Time':
@@ -311,13 +378,44 @@ class Time:
         return self._error_msg
 
     #----------------------------------------------------------
+    def get_precision(self) -> int:
+        """Gets the precision value of a time score."""
+        return self._fraction.precision if self._fraction.precision > 0 else 1
+
+    #----------------------------------------------------------
+    def set_hms_sep(self, h_sep: str | LocalTimeSeps, m_sep: str | None = None, s_sep: str | None = None) -> None:
+        """Sets the time separators."""
+        try:
+            if m_sep:
+                if s_sep:
+                    if len(h_sep) == 1 and len(m_sep) == 1 and len(s_sep) == 1:
+                        self._time_hms_sep = h_sep + m_sep + s_sep
+                    else:
+                        raise Exception()
+                else:
+                    raise Exception()
+            else:
+                if isinstance(h_sep, str):
+                    # passed a string of 3 chars
+                    if len(h_sep) == 3:
+                        self._time_hms_sep = h_sep
+                    else:
+                        raise Exception()
+                elif isinstance(h_sep, LocalTimeSeps):
+                    # passed an instance of LocalTimeSeps
+                    self._local = h_sep
+        except:
+            self._error_msg = f"erroneous arguments list for 'Time.set_hms_sep': ({h_sep}, {m_sep}, {s_sep})"
+            self.set_hms_sep(InternationalTimeSeps)
+
+    #----------------------------------------------------------
     def _evaluate_data(
         self,
         h: int,
         m: int,
         s: int,
-        frac_val: Optional[int | SecondFraction] = None,
-        frac_prec: Optional[int] = None
+        frac_val: int | SecondFraction | None = None,
+        frac_prec: int | None = None
     ) -> None:
         """Evaluate and set time data from h, m, s and optional fraction."""
         if m >= 60:
@@ -340,7 +438,7 @@ class Time:
             self.clr_error()
 
     #----------------------------------------------------------
-    def _evaluate_frac(self, frac_str: str, frac_precision: Optional[str] = None) -> None:
+    def _evaluate_frac(self, frac_str: str, frac_precision: str|None = None) -> None:
         """Evaluate fraction from string representation."""
         self.clr_error()
 
@@ -386,7 +484,7 @@ class Time:
     #----------------------------------------------------------
     def _evaluate_hms_ratio(self, time_str: str) -> bool:
         # HHH:MM:SS frac_val/frac_precision
-        match = re.search(r'^(\d\d*):(\d\d):(\d\d) (\d+)/(\d+)', time_str)
+        match = re.search(r'^(\d\d*).(\d\d).(\d\d).(\d+)/(\d+)$', time_str)
         if match:
             h = int(match.group(1))
             m = int(match.group(2))
@@ -401,7 +499,7 @@ class Time:
     #----------------------------------------------------------
     def _evaluate_hms_frac(self, time_str: str) -> bool:
         # HHH:MM:SS.frac
-        match = re.search(r'^(\d\d*):(\d\d):(\d\d)(\.(\d+))?', time_str)
+        match = re.search(r'^(\d\d*).(\d\d).(\d\d)(.(\d+))?$', time_str)
         if match:
             h = int(match.group(1))
             m = int(match.group(2))
@@ -416,7 +514,7 @@ class Time:
     #----------------------------------------------------------
     def _evaluate_ms_ratio(self, time_str: str) -> bool:
         # MM:SS frac_val/frac_precision
-        match = re.search(r'^(\d\d?):(\d\d) (\d+)/(\d+)', time_str)
+        match = re.search(r'^(\d\d?).(\d\d).(\d+)/(\d+)$', time_str)
         if match:
             m = int(match.group(1))
             s = int(match.group(2))
@@ -430,7 +528,7 @@ class Time:
     #----------------------------------------------------------
     def _evaluate_ms_frac(self, time_str: str) -> bool:
         # MM:SS.frac
-        match = re.search(r'^(\d\d*):(\d\d)(\.(\d+))?', time_str)
+        match = re.search(r'^(\d\d*).(\d\d)(.(\d+))?$', time_str)
         if match:
             m = int(match.group(1))
             s = int(match.group(2))
@@ -444,7 +542,7 @@ class Time:
     #----------------------------------------------------------
     def _evaluate_s_ratio(self, time_str: str) -> bool:
         # SS frac_val/frac_precision
-        match = re.search(r'^(\d\d?) (\d+)/(\d+)', time_str)
+        match = re.search(r'^(\d\d?).(\d+)/(\d+)$', time_str)
         if match:
             s = int(match.group(1))
             self._seconds = s
@@ -457,7 +555,7 @@ class Time:
     #----------------------------------------------------------
     def _evaluate_s_frac(self, time_str: str) -> bool:
         # SS.frac
-        match = re.search(r'^(\d\d?)(\.(\d+))?', time_str)
+        match = re.search(r'^(\d\d?)(.(\d+))?$', time_str)
         if match:
             s = int(match.group(1))
             self._seconds = s
@@ -507,7 +605,7 @@ class HMTime(Time):
     def _evaluate_str(self, time_str: str) -> None:
         """Evaluates the time score from a formatted string."""
         # HHH:MM
-        match = re.search(r'^(\d\d*):(\d\d)', time_str)
+        match = re.search(r'^(\d\d*).(\d\d)$', time_str)
         if match:
             # Found a match, things are fine
             self._seconds = 3600 * match[1] + 60 * match[2]
@@ -599,59 +697,3 @@ class StrTime(Time):
         """
         super().__init__()
         self._evaluate_str(time_str)
-
-        r""" Notice: to be removed once this module will have been validated
-        # HHH:MM:SS frac_val/frac_precision
-        match = re.search(r'^(\d\d*):(\d\d):(\d\d) (\d+)/(\d+)', time_str)
-        if match:
-            h = int(match.group(1))
-            m = int(match.group(2))
-            s = int(match.group(3))
-            self._seconds = 3600 * h + 60 * m + s
-            self._evaluate_frac(match.group(4), match.group(5))
-            return
-
-        # HHH:MM:SS.frac
-        match = re.search(r'^(\d\d*):(\d\d):(\d\d)(\.(\d+))?', time_str)
-        if match:
-            h = int(match.group(1))
-            m = int(match.group(2))
-            s = int(match.group(3))
-            self._seconds = 3600 * h + 60 * m + s
-            self._evaluate_frac(match.group(5) if match.group(5) else "")
-            return
-
-        # MM:SS frac_val/frac_precision
-        match = re.search(r'^(\d\d?):(\d\d) (\d+)/(\d+)', time_str)
-        if match:
-            m = int(match.group(1))
-            s = int(match.group(2))
-            self._seconds = 60 * m + s
-            self._evaluate_frac(match.group(3), match.group(4))
-            return
-
-        # MM:SS.frac
-        match = re.search(r'^(\d\d*):(\d\d)(\.(\d+))?', time_str)
-        if match:
-            m = int(match.group(1))
-            s = int(match.group(2))
-            self._seconds = 60 * m + s
-            self._evaluate_frac(match.group(4) if match.group(4) else "")
-            return
-
-        # SS frac_val/frac_precision
-        match = re.search(r'^(\d\d?) (\d+)/(\d+)', time_str)
-        if match:
-            s = int(match.group(1))
-            self._seconds = s
-            self._evaluate_frac(match.group(2), match.group(3))
-            return
-
-        # SS.frac
-        match = re.search(r'^(\d\d?)(\.(\d+))?', time_str)
-        if match:
-            s = int(match.group(1))
-            self._seconds = s
-            self._evaluate_frac(match.group(3) if match.group(3) else "")
-            return
-        """

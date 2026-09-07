@@ -31,7 +31,7 @@ int main()
     std::cout << std::string(t2) << '\n';
     
     crl::Time t3{ "1u15m27,38" };
-    crl::Time::set_hms_sep(crl::FrenchTimeSeps);
+    t3.set_hms_sep(crl::FrenchTimeSeps);
     std::cout << std::string(t3) << '\n';
 
     crl::MSTime ms1{ "1:02.345" };

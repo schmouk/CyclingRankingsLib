@@ -146,9 +146,6 @@ namespace crl
 
     //=====   Time Scores   ===================================
     //---------------------------------------------------------
-    char Time::_time_hms_sep[4] = "::.";
-
-    //---------------------------------------------------------
     Time::Time(
         const std::uint16_t h,
         const std::uint8_t  m,
@@ -660,7 +657,7 @@ namespace crl
         // HHH:MM
         std::smatch time_matches;
 
-        if (std::regex_search(str, time_matches, std::regex("^(\\d\\d*):(\\d\\d)"))) {
+        if (std::regex_search(str, time_matches, std::regex("^(\\d\\d*).(\\d\\d$)"))) {
             // Match h, m found!
             const std::int32_t h{ std::stol(time_matches[1]) };
             const std::int32_t m{ std::stol(time_matches[2]) };

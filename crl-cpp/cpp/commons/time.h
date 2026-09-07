@@ -141,14 +141,14 @@ namespace crl
         //-----   Accessors   ---------------------------------
         const std::uint16_t get_precision() const noexcept;
 
-        static void set_hms_sep(const char h_sep, const char m_sep, const char s_sep) noexcept;
-        static void set_hms_sep(const char time_seps[4]) noexcept;
-        static void set_hms_sep(const LocalTimeSeps& local) noexcept;
+        void set_hms_sep(const char h_sep, const char m_sep, const char s_sep) noexcept;
+        void set_hms_sep(const char time_seps[4]) noexcept;
+        void set_hms_sep(const LocalTimeSeps& local) noexcept;
 
 
     protected:
         //-----------------------------------------------------
-        static char _time_hms_sep[4];
+        char _time_hms_sep[4]{ "::." };
         enum {
             _H_SEP = 0,
             _M_SEP,
