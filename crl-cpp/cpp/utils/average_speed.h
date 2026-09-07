@@ -98,43 +98,4 @@ namespace crl
         ) noexcept;
     };
 
-
-    /** /
-    //=====   Local Implementations   =========================
-    //---------------------------------------------------------
-    template<crl::time_type TimeT>
-    const std::string AverageSpeed::evaluate(const double dist, TimeT& time) noexcept
-    {
-        return _evaluate_speed(
-            dist,
-            time,
-            1.0 / time.get_precision()  // Notice: precision never equals 0
-        );
-    }
-
-    //---------------------------------------------------------
-    template<>
-    const std::string AverageSpeed::evaluate(const double dist, crl::HMTime& time) noexcept
-    {
-        return _evaluate_speed(
-            dist,
-            time,
-            1.0 / 60.0  // Notice: precision is 1 minute
-        );
-    }
-
-    //---------------------------------------------------------
-    template<crl::time_type TimeT>
-    const std::string AverageSpeed::get(const double dist, TimeT& time) noexcept
-    {
-        return _speed_str = AverageSpeed::evaluate(dist, time);
-    }
-
-    //---------------------------------------------------------
-    template<>
-    const std::string AverageSpeed::get(const double dist, crl::HMTime& hm_time) noexcept
-    {
-        return _speed_str = AverageSpeed::evaluate(dist, hm_time);
-    }
-    /**/
 }
