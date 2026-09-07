@@ -178,26 +178,31 @@ class Time:
     #----------------------------------------------------------
     def __init__(
         self,
-        h: Optional[int] = None,
-        m: Optional[int] = None,
-        s: Optional[int] = None,
-        frac_val: Optional[int | SecondFraction] = None,
-        frac_prec: Optional[int] = None
+        h: int | str | LocalTimeSeps | None = None,
+        m: int | None = None,
+        s: int | None = None,
+        frac_val: int | SecondFraction | None = None,
+        frac_prec: int | None = None
     ) -> None:
         """Initialize a Time object."""
-        self._local = InternationalTimeSeps
+        self._seconds: int = 0
+        self._fraction: SecondFraction = SecondFraction(0, 1)
+        self._local: LocalTimeSeps = InternationalTimeSeps
         self.clr_error()
 
         # Determines which constructor pattern was used
         if h is None:
             # Empty constructor
-            self._seconds: int = 0
-            self._fraction: SecondFraction = SecondFraction(0, 1)
-            self._error_msg: str = ""
+            pass
 
         elif isinstance(h, str):
             # Str constructor
             self._evaluate_str(h)
+            if m or s or frac_val or frac_prec:
+                f"Erroneous args passing at Time creation: ({h}, {m}, {s}, {frac_val}, {frac_prec})"
+
+        elif isinstance(h, LocalTimeSeps):
+            self._local = h
             if m or s or frac_val or frac_prec:
                 f"Erroneous args passing at Time creation: ({h}, {m}, {s}, {frac_val}, {frac_prec})"
 

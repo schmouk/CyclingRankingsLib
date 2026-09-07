@@ -37,6 +37,11 @@ int main()
     crl::MSTime ms1{ "1:02.345" };
     std::cout << std::string(ms1) << '\n';
 
+    crl::HMTime thm{ 4, 5, crl::FrenchTimeSeps };
+    std::cout << std::string(thm) << " / ";
+    thm.set_hms_sep(crl::InternationalTimeSeps);
+    std::cout << std::string(thm) << '\n';
+
     std::cout << "t2 < t : " << (t2 < t ? "true" : "false") << std::endl;
     /**/
 }

@@ -58,6 +58,8 @@ namespace crl
         const bool operator<(const SecondFraction& other) const noexcept;
         const bool operator==(const SecondFraction& other) const noexcept;
 
+        operator const bool() const noexcept { return value == 0 && precision == 1; }
+
 
     private:
         static std::uint32_t _gcd(std::uint32_t a, std::uint32_t b) noexcept;
@@ -72,8 +74,9 @@ namespace crl
         char h_sep{ ':' };
         char m_sep{ ':' };
         char s_sep{ '.' };
+        bool force_sec_sep{ false };
 
-        LocalTimeSeps(const char time_seps[4]) noexcept;
+        LocalTimeSeps(const char time_seps[4], const bool force_sec_sep = false) noexcept;
 
     };
 
@@ -89,14 +92,52 @@ namespace crl
     {
     public:
         //-----   Constructors / Destructor   -----------------
-        Time(const std::uint16_t h, const std::uint8_t m, const std::uint8_t s, const std::uint16_t frac_val, const std::uint16_t frac_prec) noexcept;
-        Time(const std::uint16_t h, const std::uint8_t m, const std::uint8_t s, const SecondFraction frac) noexcept;
-        Time(const std::uint16_t h, const std::uint8_t m, const std::uint8_t s) noexcept;
+        Time(
+            const std::uint16_t  h,
+            const std::uint8_t   m,
+            const std::uint8_t   s,
+            const std::uint16_t  frac_val,
+            const std::uint16_t  frac_prec,
+            const LocalTimeSeps& localize = InternationalTimeSeps
+        ) noexcept;
 
-        explicit Time(const double time, const int precision = 0) noexcept;  // mostly used values for precision: 0, 5, 10, 100, 1000
+        Time(
+            const std::uint16_t  h,
+            const std::uint8_t   m,
+            const std::uint8_t   s,
+            const SecondFraction frac,
+            const LocalTimeSeps& localize = InternationalTimeSeps
+        ) noexcept;
 
-        explicit Time(const std::string& time) noexcept;
-        explicit Time(const char* time) noexcept;
+        Time(
+            const std::uint16_t  h,
+            const std::uint8_t   m,
+            const std::uint8_t   s,
+            const LocalTimeSeps& localize = InternationalTimeSeps
+        ) noexcept;
+
+        explicit Time(
+            const double         time,
+            const int            precision,  // mostly used values for precision: 0, 5, 10, 100, 1000
+            const LocalTimeSeps& localize = InternationalTimeSeps
+        ) noexcept;
+
+        explicit Time(
+            const double         time,
+            const LocalTimeSeps& localize = InternationalTimeSeps
+        ) noexcept;
+
+        explicit Time(
+            const std::string&   time,
+            const LocalTimeSeps& localize = InternationalTimeSeps
+        ) noexcept;
+        
+        explicit Time(
+            const char*          time,
+            const LocalTimeSeps& localize = InternationalTimeSeps
+        ) noexcept;
+
+        Time(const LocalTimeSeps& localize) noexcept;
 
         Time() noexcept = default;
         virtual ~Time() noexcept = default;
@@ -141,19 +182,19 @@ namespace crl
         //-----   Accessors   ---------------------------------
         const std::uint16_t get_precision() const noexcept;
 
-        void set_hms_sep(const char h_sep, const char m_sep, const char s_sep) noexcept;
-        void set_hms_sep(const char time_seps[4]) noexcept;
+        void set_hms_sep(const char h_sep, const char m_sep, const char s_sep, const bool force_s_sep = false) noexcept;
+        void set_hms_sep(const char time_seps[4], const bool force_s_sep = false) noexcept;
         void set_hms_sep(const LocalTimeSeps& local) noexcept;
 
 
     protected:
         //-----------------------------------------------------
-        char _time_hms_sep[4]{ "::." };
-        enum {
-            _H_SEP = 0,
-            _M_SEP,
-            _S_SEP
-        };
+        LocalTimeSeps _local{ InternationalTimeSeps };
+
+        inline const char _h_sep() const noexcept { return _local.h_sep; };
+        inline const char _m_sep() const noexcept { return _local.m_sep; };
+        inline const char _s_sep() const noexcept { return _local.s_sep; };
+        inline const bool _force_s_sep() const noexcept { return _local.force_sec_sep; };
 
         std::int32_t   _seconds{ 0 };
         SecondFraction _fraction{ 0, 1 };
@@ -193,12 +234,14 @@ namespace crl
     class HMTime : public Time
     {
     public:
-        HMTime(const std::uint16_t h, const std::uint8_t m) noexcept;
+        HMTime(const std::uint16_t h, const std::uint8_t m, const LocalTimeSeps& localize = InternationalTimeSeps) noexcept;
 
-        explicit HMTime(const std::string& time) noexcept;
-        explicit HMTime(const char* time) noexcept;
+        explicit HMTime(const std::string& time, const LocalTimeSeps& localize = InternationalTimeSeps) noexcept;
+        explicit HMTime(const char* time, const LocalTimeSeps& localize = InternationalTimeSeps) noexcept;
 
         virtual ~HMTime() noexcept = default;
+
+        operator std::string() const noexcept;
 
         HMTime(const HMTime&) noexcept = default;
         HMTime(HMTime&&) noexcept = default;
@@ -214,14 +257,40 @@ namespace crl
     class MSTime : public Time
     {
     public:
-        MSTime(const std::uint8_t m, const std::uint8_t s, const std::uint16_t frac_val, const std::uint16_t frac_prec) noexcept;
-        MSTime(const std::uint8_t m, const std::uint8_t s, const SecondFraction frac) noexcept;
-        MSTime(const std::uint8_t m, const std::uint8_t s) noexcept;
+        MSTime(
+            const std::uint8_t   m,
+            const std::uint8_t   s,
+            const std::uint16_t  frac_val,
+            const std::uint16_t  frac_prec,
+            const LocalTimeSeps& localize = InternationalTimeSeps
+        ) noexcept;
+        
+        MSTime(
+            const std::uint8_t   m,
+            const std::uint8_t   s,
+            const SecondFraction frac,
+            const LocalTimeSeps& localize = InternationalTimeSeps
+        ) noexcept;
 
-        explicit MSTime(const double time, const int precision = 0) noexcept;  // mostly used values for precision: 0, 5, 10, 100, 1000
+        MSTime(
+            const std::uint8_t   m,
+            const std::uint8_t   s,
+            const LocalTimeSeps& localize = InternationalTimeSeps
+        ) noexcept;
 
-        explicit MSTime(const std::string& time) noexcept;
-        explicit MSTime(const char* time) noexcept;
+        explicit MSTime(
+            const double         time,
+            const int            precision,  // mostly used values for precision: 0, 5, 10, 100, 1000
+            const LocalTimeSeps& localize = InternationalTimeSeps
+        ) noexcept;
+        
+        explicit MSTime(
+            const double         time,
+            const LocalTimeSeps& localize = InternationalTimeSeps
+        ) noexcept;
+
+        explicit MSTime(const std::string& time, const LocalTimeSeps& localize = InternationalTimeSeps) noexcept;
+        explicit MSTime(const char* time, const LocalTimeSeps& localize = InternationalTimeSeps) noexcept;
 
         virtual ~MSTime() noexcept = default;
 
@@ -239,14 +308,34 @@ namespace crl
     class STime : public Time
     {
     public:
-        STime(const std::uint8_t s, const std::uint16_t frac_val, const std::uint16_t frac_prec) noexcept;
-        STime(const std::uint8_t s, const SecondFraction frac) noexcept;
-        STime(const unsigned int s) noexcept;
+        STime(
+            const std::uint8_t   s,
+            const std::uint16_t  frac_val,
+            const std::uint16_t  frac_prec,
+            const LocalTimeSeps& localize = InternationalTimeSeps
+        ) noexcept;
 
-        explicit STime(const double time, const int precision = 0) noexcept;  // mostly used values for precision: 0, 5, 10, 100, 1000
+        STime(
+            const std::uint8_t   s,
+            const SecondFraction frac,
+            const LocalTimeSeps& localize = InternationalTimeSeps
+        ) noexcept;
 
-        explicit STime(const std::string& time) noexcept;
-        explicit STime(const char* time) noexcept;
+        STime(const unsigned int s, const LocalTimeSeps& localize = InternationalTimeSeps) noexcept;
+
+        explicit STime(
+            const double         time,
+            const int            precision,  // mostly used values for precision: 0, 5, 10, 100, 1000
+            const LocalTimeSeps& localize = InternationalTimeSeps
+        ) noexcept;
+
+        explicit STime(
+            const double         time,
+            const LocalTimeSeps& localize = InternationalTimeSeps
+        ) noexcept;
+
+        explicit STime(const std::string& time, const LocalTimeSeps& localize = InternationalTimeSeps) noexcept;
+        explicit STime(const char* time, const LocalTimeSeps& localize = InternationalTimeSeps) noexcept;
 
         virtual ~STime() noexcept = default;
 

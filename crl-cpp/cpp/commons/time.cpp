@@ -131,28 +131,31 @@ namespace crl
 
     //=====   Localization of time separators   ===============
     //---------------------------------------------------------
-    LocalTimeSeps::LocalTimeSeps(const char time_seps[4]) noexcept
+    LocalTimeSeps::LocalTimeSeps(const char time_seps[4], const bool force_sec_sep) noexcept
         : h_sep{ time_seps[0] }
         , m_sep{ time_seps[1] }
         , s_sep{ time_seps[2] }
+        , force_sec_sep{ force_sec_sep }
     {}
 
     //---------------------------------------------------------
     LocalTimeSeps InternationalTimeSeps{ "::."};
     LocalTimeSeps DutchTimeSeps{ "um," };
     LocalTimeSeps EuropeanTimeSeps{ "::," };
-    LocalTimeSeps FrenchTimeSeps{ "h'\"" } ;
+    LocalTimeSeps FrenchTimeSeps{ "h'\"", true } ;
 
 
     //=====   Time Scores   ===================================
     //---------------------------------------------------------
     Time::Time(
-        const std::uint16_t h,
-        const std::uint8_t  m,
-        const std::uint8_t  s,
-        const std::uint16_t frac_val,
-        const std::uint16_t frac_prec
+        const std::uint16_t  h,
+        const std::uint8_t   m,
+        const std::uint8_t   s,
+        const std::uint16_t  frac_val,
+        const std::uint16_t  frac_prec,
+        const LocalTimeSeps& localize
     ) noexcept
+        : _local{ localize }
     {
         _evaluate_data(h, m, s, SecondFraction{ frac_val, frac_prec });
     }
@@ -162,7 +165,10 @@ namespace crl
         const std::uint16_t h,
         const std::uint8_t  m,
         const std::uint8_t  s,
-        const SecondFraction frac) noexcept
+        const SecondFraction frac,
+        const LocalTimeSeps& localize
+    ) noexcept
+        : _local{ localize }
     {
         _evaluate_data(h, m, s, frac);
     }
@@ -171,14 +177,17 @@ namespace crl
     Time::Time(
         const std::uint16_t h,
         const std::uint8_t  m,
-        const std::uint8_t  s
+        const std::uint8_t  s,
+        const LocalTimeSeps& localize
     ) noexcept
+        : _local{ localize }
     {
         _evaluate_data(h, m, s);
     }
 
     //---------------------------------------------------------
-    Time::Time(const double time, const int precision) noexcept
+    Time::Time(const double time, const int precision, const LocalTimeSeps& localize) noexcept
+        : _local{ localize }
     {
         double _int_part, _frac_part;
         _frac_part = std::modf(time, &_int_part);
@@ -196,17 +205,31 @@ namespace crl
     }
 
     //---------------------------------------------------------
-    Time::Time(const std::string& time) noexcept
+    Time::Time(const double time, const LocalTimeSeps& localize) noexcept
+        : _local{ localize }
+        , _seconds{ static_cast<std::int32_t>(time) }
+        , _fraction{ 0, 1 }
+    {}
+
+    //---------------------------------------------------------
+    Time::Time(const std::string& time, const LocalTimeSeps& localize) noexcept
+        : _local{ localize }
     {
         _evaluate_time(time.c_str());
     }
 
     //---------------------------------------------------------
-    Time::Time(const char* time) noexcept
+    Time::Time(const char* time, const LocalTimeSeps& localize) noexcept
+        : _local{ localize }
     {
         if (time)
             _evaluate_time(time);
     }
+
+    //---------------------------------------------------------
+    Time::Time(const LocalTimeSeps& localize) noexcept
+        : _local{ localize }
+    {}
 
     //---------------------------------------------------------
     Time& Time::operator= (std::string& time) noexcept
@@ -303,22 +326,52 @@ namespace crl
         const std::uint8_t  s{ static_cast<std::uint8_t>(_seconds % 60 )};
         const std::string   frac{ std::string(_fraction) };
 
-        if (h > 0)
-            return std::format(
-                "{}{}{:02d}{}{:02d}{}{}",
-                h, _time_hms_sep[_H_SEP],
-                m, _time_hms_sep[_M_SEP],
-                s, _time_hms_sep[_S_SEP], frac
-            );
-        
-        if (m > 0)
-            return std::format(
-                "{:d}{}{:02d}{}{}",
-                m, _time_hms_sep[_M_SEP],
-                s, _time_hms_sep[_S_SEP], frac
-            );
+        if (h > 0) {
+            // HMS.frac formatting
+            if (!frac.empty()) {
+                return std::format(
+                    "{}{}{:02d}{}{:02d}{}{}",
+                    h, _h_sep(), m, _m_sep(), s, _s_sep(), frac
+                );
+            }
+            else {
+                if (_force_s_sep())
+                    return std::format(
+                        "{}{}{:02d}{}{:02d}{}",
+                        h, _h_sep(), m, _m_sep(), s, _s_sep()
+                    );
+                else
+                    return std::format(
+                        "{}{}{:02d}{}{:02d}",
+                        h, _h_sep(), m, _m_sep(), s
+                    );
+            }
+        }
 
-        return std::format("{:d}{}{}", s, _time_hms_sep[_S_SEP], frac);
+        if (m > 0) {
+            // MS.frac formatting
+            if (!frac.empty()) {
+                return std::format("{:d}{}{:02d}{}{}", m, _m_sep(), s, _s_sep(), frac);
+            }
+            else {
+                if (_force_s_sep())
+                    return std::format("{}{}{:02d}{}", m, _m_sep(), s, _s_sep());
+                else
+                    return std::format("{}{}{:02d}", m, _m_sep(), s);
+            }
+        }
+
+        // S.frac formatting
+        if (!frac.empty()) {
+            return std::format("{:d}{}{}", s, _s_sep(), frac);
+        }
+        else {
+            if (_force_s_sep())
+                return std::format("{}{}", s, _s_sep());
+            else
+                return std::format("{}", s);
+        }
+
     }
 
     //---------------------------------------------------------
@@ -405,27 +458,21 @@ namespace crl
     }
 
     //-----------------------------------------------------
-    void Time::set_hms_sep(const char h_sep, const char m_sep, const char s_sep) noexcept
+    void Time::set_hms_sep(const char h_sep, const char m_sep, const char s_sep, const bool force_s_sep) noexcept
     {
-        _time_hms_sep[_H_SEP] = h_sep;
-        _time_hms_sep[_M_SEP] = m_sep;
-        _time_hms_sep[_S_SEP] = s_sep;
+        set_hms_sep(LocalTimeSeps(std::format("{}{}{}", h_sep, m_sep, s_sep).c_str(), force_s_sep));
     }
 
     //-----------------------------------------------------
-    void Time::set_hms_sep(const char time_seps[4]) noexcept
+    void Time::set_hms_sep(const char time_seps[4], const bool force_s_sep) noexcept
     {
-        _time_hms_sep[_H_SEP] = time_seps[_H_SEP];
-        _time_hms_sep[_M_SEP] = time_seps[_M_SEP];
-        _time_hms_sep[_S_SEP] = time_seps[_S_SEP];
+        set_hms_sep(LocalTimeSeps(time_seps, force_s_sep));
     }
 
     //-----------------------------------------------------
     void Time::set_hms_sep(const LocalTimeSeps& local) noexcept
     {
-        _time_hms_sep[_H_SEP] = local.h_sep;
-        _time_hms_sep[_M_SEP] = local.m_sep;
-        _time_hms_sep[_S_SEP] = local.s_sep;
+        _local = local;
     }
 
     //-----------------------------------------------------
@@ -633,22 +680,38 @@ namespace crl
 
     //=====   HMTime   ========================================
     //---------------------------------------------------------
-    HMTime::HMTime(const std::uint16_t h, const std::uint8_t m) noexcept
-        : Time{ h, m, 0 }
+    HMTime::HMTime(
+        const std::uint16_t  h,
+        const std::uint8_t   m,
+        const LocalTimeSeps& localize
+    ) noexcept
+        : Time{ h, m, 0, localize }
     {}
 
     //---------------------------------------------------------
-    HMTime::HMTime(const std::string& time) noexcept
-        : Time{}
+    HMTime::HMTime(const std::string& time, const LocalTimeSeps& localize) noexcept
+        : Time{ localize }
     {
         _evaluate_time(time);
     }
 
     //---------------------------------------------------------
-    HMTime::HMTime(const char* time) noexcept
-        : Time{}
+    HMTime::HMTime(const char* time, const LocalTimeSeps& localize) noexcept
+        : Time{ localize }
     {
         _evaluate_time(std::string(time));
+    }
+
+    //---------------------------------------------------------
+    HMTime::operator std::string() const noexcept
+    {
+        const std::uint16_t h{ static_cast<std::uint16_t>(_seconds / 3600) };
+        const std::uint8_t  m{ static_cast<std::uint8_t>((_seconds % 3600) / 60) };
+
+        if (_force_s_sep())
+            return std::format("{}{}{:02d}{}", h, _h_sep(), m, _m_sep());
+        else
+            return std::format("{}{}{:02d}", h, _h_sep(), m);
     }
 
     //---------------------------------------------------------
@@ -673,33 +736,66 @@ namespace crl
 
     //=====   MSTime   ========================================
     //---------------------------------------------------------
-    MSTime::MSTime(const std::uint8_t m, const std::uint8_t s, const std::uint16_t frac_val, const std::uint16_t frac_prec) noexcept
-        : Time{ 0, m, s, frac_val, frac_prec }
+    MSTime::MSTime(
+        const std::uint8_t   m,
+        const std::uint8_t   s,
+        const std::uint16_t  frac_val,
+        const std::uint16_t  frac_prec,
+        const LocalTimeSeps& localize
+    ) noexcept
+        : Time{ 0, m, s, frac_val, frac_prec, localize }
     {}
 
     //---------------------------------------------------------
-    MSTime::MSTime(const std::uint8_t m, const std::uint8_t s, const SecondFraction frac) noexcept
-        : Time{ 0, m, s, frac }
+    MSTime::MSTime(
+        const std::uint8_t   m,
+        const std::uint8_t   s,
+        const SecondFraction frac,
+        const LocalTimeSeps& localize
+    ) noexcept
+        : Time{ 0, m, s, frac, localize }
     {}
 
     //---------------------------------------------------------
-    MSTime::MSTime(const std::uint8_t m, const std::uint8_t s) noexcept
-        : Time{ 0, m, s }
+    MSTime::MSTime(
+        const std::uint8_t   m,
+        const std::uint8_t   s,
+        const LocalTimeSeps& localize
+    ) noexcept
+        : Time{ 0, m, s, localize }
     {}
 
     //---------------------------------------------------------
-    MSTime::MSTime(const double time, const int precision) noexcept
-        : Time{ time, precision }
+    MSTime::MSTime(
+        const double         time,
+        const int            precision,
+        const LocalTimeSeps& localize
+    ) noexcept
+        : Time{ time, precision, localize }
     {}
 
     //---------------------------------------------------------
-    MSTime::MSTime(const std::string& time) noexcept
-        : Time{ time }
+    MSTime::MSTime(
+        const double         time,
+        const LocalTimeSeps& localize
+    ) noexcept
+        : Time{ time, localize }
     {}
 
     //---------------------------------------------------------
-    MSTime::MSTime(const char* time) noexcept
-        : Time{ time }
+    MSTime::MSTime(
+        const std::string& time,
+        const LocalTimeSeps& localize
+    ) noexcept
+        : Time{ time, localize }
+    {}
+
+    //---------------------------------------------------------
+    MSTime::MSTime(
+        const char* time,
+        const LocalTimeSeps& localize
+    ) noexcept
+        : Time{ time, localize }
     {}
 
     //---------------------------------------------------------
@@ -716,33 +812,63 @@ namespace crl
 
     //=====   STime   =========================================
     //---------------------------------------------------------
-    STime::STime(const std::uint8_t s, const std::uint16_t frac_val, const std::uint16_t frac_prec) noexcept
-        : Time{ 0, 0, s, frac_val, frac_prec }
+    STime::STime(
+        const std::uint8_t s,
+        const std::uint16_t frac_val,
+        const std::uint16_t frac_prec,
+        const LocalTimeSeps& localize
+    ) noexcept
+        : Time{ 0, 0, s, frac_val, frac_prec, localize }
     {}
 
     //---------------------------------------------------------
-    STime::STime(const std::uint8_t s, const SecondFraction frac) noexcept
-        : Time{ 0, 0, s, frac }
+    STime::STime(
+        const std::uint8_t s,
+        const SecondFraction frac,
+        const LocalTimeSeps& localize
+    ) noexcept
+        : Time{ 0, 0, s, frac, localize }
     {}
 
     //---------------------------------------------------------
-    STime::STime(const unsigned int s) noexcept
-        : Time{ static_cast<double>(s) }
+    STime::STime(
+        const unsigned int s,
+        const LocalTimeSeps& localize
+    ) noexcept
+        : Time{ static_cast<double>(s), localize }
     {}
 
     //---------------------------------------------------------
-    STime::STime(const double time, const int precision) noexcept
-        : Time{ time, precision }
+    STime::STime(
+        const double time,
+        const int precision,
+        const LocalTimeSeps& localize
+    ) noexcept
+        : Time{ time, precision, localize }
     {}
 
     //---------------------------------------------------------
-    STime::STime(const std::string& time) noexcept
-        : Time{ time }
+    STime::STime(
+        const double time,
+        const LocalTimeSeps& localize
+    ) noexcept
+        : Time{ time, localize }
     {}
 
     //---------------------------------------------------------
-    STime::STime(const char* time) noexcept
-        : Time{ time }
+    STime::STime(
+        const std::string& time,
+        const LocalTimeSeps& localize
+    ) noexcept
+        : Time{ time, localize }
+    {}
+
+    //---------------------------------------------------------
+    STime::STime(
+        const char* time,
+        const LocalTimeSeps& localize
+    ) noexcept
+        : Time{ time, localize }
     {}
 
     //---------------------------------------------------------
