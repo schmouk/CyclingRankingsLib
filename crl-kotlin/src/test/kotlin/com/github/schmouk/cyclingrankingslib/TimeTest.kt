@@ -10,10 +10,10 @@ class TimeTest {
     fun secondFractionFormatsAndConvertsValues() {
         assertEquals(0.0, SecondFraction().toDouble(), 0.0)
         assertEquals("", SecondFraction(0u, 1u).toString())
-        assertEquals(".7", SecondFraction(7u, 10u).toString())
-        assertEquals(".07", SecondFraction(7u, 100u).toString())
-        assertEquals(".007", SecondFraction(7u, 1000u).toString())
-        assertEquals(" 7/11", SecondFraction(7u, 11u).toString())
+        assertEquals("7", SecondFraction(7u, 10u).toString())
+        assertEquals("07", SecondFraction(7u, 100u).toString())
+        assertEquals("007", SecondFraction(7u, 1000u).toString())
+        assertEquals("7/11", SecondFraction(7u, 11u).toString())
         assertEquals(1.0, SecondFraction(1u, 2u).also { it += SecondFraction(1u, 2u) }.toDouble(), 0.0)
     }
 
@@ -62,15 +62,15 @@ class TimeTest {
         assertEquals(12.34, Time("12.34").toDouble(), 0.0)
         assertEquals(12.5, Time("12 1/2").toDouble(), 0.0)
         assertEquals(12.345, Time("12.34567").toDouble(), 0.0)
-        assertEquals(" 5", Time("5").toString())
+        assertEquals("5", Time("5").toString())
     }
 
     @Test
     fun stringFormattingUsesTheExpectedPrecisionAndWidths() {
         assertEquals("1:02:03.25", Time("1:02:03.25").toString())
-        assertEquals(" 2:03.5", Time("2:03.5").toString())
-        assertEquals(" 3.50", Time("3.50").toString())
-        assertEquals(" 4 7/11", Time("4 7/11").toString())
+        assertEquals("2:03.5", Time("2:03.5").toString())
+        assertEquals("3.50", Time("3.50").toString())
+        assertEquals("4.7/11", Time("4 7/11").toString())
     }
 
     @Test
@@ -99,7 +99,7 @@ class TimeTest {
 
         assertTrue(time.assign(null).is_ok())
         assertEquals(0.0, time.toDouble(), 0.0)
-        assertEquals(" 0", time.toString())
+        assertEquals("0", time.toString())
         assertEquals(12.5, time.assign("12.5").toDouble(), 0.0)
     }
 
@@ -149,5 +149,27 @@ class TimeTest {
         assertFalse(later <= earlier)
         assertFalse(earlier > later)
         assertFalse(earlier >= later)
+    }
+
+    @Test
+    fun localizationControlsParsingFormattingAndPrecision() {
+        val french = Time("1h02'03\"5", FrenchTimeSeps)
+
+        assertEquals(3723.5, french.toDouble(), 0.0)
+        assertEquals("1h02'03\"5", french.toString())
+        assertEquals(10.toUShort(), french.get_precision())
+
+        french.set_hms_sep(EuropeanTimeSeps)
+        assertEquals("1:02:03,5", french.toString())
+        french.set_hms_sep(':', ':', ',', true)
+        assertEquals("1:02:03,5", french.toString())
+    }
+
+    @Test
+    fun specializedTimeClassesUseTheirRestrictedFormats() {
+        assertEquals("1:02", HMTime("1:02").toString())
+        assertEquals(3720L, HMTime(1u, 2u).toLong())
+        assertEquals(123.5, MSTime("2:03.5").toDouble(), 0.0)
+        assertEquals(12.5, STime("12.5").toDouble(), 0.0)
     }
 }

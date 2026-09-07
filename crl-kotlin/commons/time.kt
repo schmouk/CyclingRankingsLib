@@ -64,11 +64,13 @@ class SecondFraction(
 
     override fun toString(): String = when (precision.toInt()) {
         0, 1 -> ""
-        10 -> ".${value}"
-        100 -> ".${value.toString().padStart(2, '0')}"
-        1000 -> ".${value.toString().padStart(3, '0')}"
-        else -> " ${value}/${precision}"
+        10 -> value.toString()
+        100 -> value.toString().padStart(2, '0')
+        1000 -> value.toString().padStart(3, '0')
+        else -> "${value}/${precision}"
     }
+
+    fun isDefault(): Boolean = value == 0.toUShort() && precision == 1.toUShort()
 
     private fun _gcd(first: UInt, second: UInt): UInt {
         var a = first
@@ -85,29 +87,60 @@ class SecondFraction(
 }
 
 
+//=====   Localization of time separators   ===============
+data class LocalTimeSeps(
+    val hSep: Char = ':',
+    val mSep: Char = ':',
+    val sSep: Char = '.',
+    val forceSecSep: Boolean = false
+) {
+    constructor(timeSeps: String, forceSecSep: Boolean = false) : this(
+        timeSeps.getOrElse(0) { ':' },
+        timeSeps.getOrElse(1) { ':' },
+        timeSeps.getOrElse(2) { '.' },
+        forceSecSep
+    )
+}
+
+val InternationalTimeSeps = LocalTimeSeps("::.")
+val DutchTimeSeps = LocalTimeSeps("um,")
+val EuropeanTimeSeps = LocalTimeSeps("::,")
+val FrenchTimeSeps = LocalTimeSeps("h'\"", true)
+
+
 //=====   Time Scores   ===================================
 open class Time {
+    protected var _local: LocalTimeSeps = InternationalTimeSeps
     protected var _seconds: Int = 0
     protected var _fraction: SecondFraction = SecondFraction()
     protected var _error_msg: String = ""
 
+    constructor()
+
+    constructor(localize: LocalTimeSeps) {
+        _local = localize
+    }
+
     constructor(other: Time) {
+        _local = other._local
         _seconds = other._seconds
         _fraction = SecondFraction(other._fraction.value, other._fraction.precision)
         _error_msg = other._error_msg
     }
 
-    constructor(h: UShort, m: UByte, s: UByte, frac_val: UShort, frac_prec: UShort) {
+    constructor(h: UShort, m: UByte, s: UByte, frac_val: UShort, frac_prec: UShort, localize: LocalTimeSeps = InternationalTimeSeps) : this(localize) {
         _evaluate_data(h, m, s, SecondFraction(frac_val, frac_prec))
     }
 
-    constructor(h: UShort, m: UByte, s: UByte, frac: SecondFraction) {
+    constructor(h: UShort, m: UByte, s: UByte, frac: SecondFraction, localize: LocalTimeSeps = InternationalTimeSeps) : this(localize) {
         _evaluate_data(h, m, s, frac)
     }
 
-    constructor(h: UShort, m: UByte, s: UByte) {
+    constructor(h: UShort, m: UByte, s: UByte, localize: LocalTimeSeps) : this(localize) {
         _evaluate_data(h, m, s)
     }
+
+    constructor(h: UShort, m: UByte, s: UByte) : this(h, m, s, InternationalTimeSeps)
 
     constructor(m: UByte, s: UByte, frac_val: UShort, frac_prec: UShort) {
         _evaluate_data(0u, m, s, SecondFraction(frac_val, frac_prec))
@@ -134,17 +167,23 @@ open class Time {
         else _evaluate_data((s / 3600u).toUShort(), ((s % 3600u) / 60u).toUByte(), (s % 60u).toUByte())
     }
 
-    constructor(time: Double, precision: Int = 0) {
+    constructor(time: Double, precision: Int, localize: LocalTimeSeps = InternationalTimeSeps) : this(localize) {
         val integerPart = kotlin.math.floor(time)
         _seconds = integerPart.toInt()
         _fraction = if (precision == 0) {
             SecondFraction()
         } else {
-            SecondFraction((precision * (time - integerPart)).toInt().toUShort(), precision.toUShort())
+            SecondFraction(kotlin.math.round(precision * (time - integerPart)).toInt().toUShort(), precision.toUShort())
         }
     }
 
-    constructor(time: String?) {
+    constructor(time: Double, localize: LocalTimeSeps) : this(localize) {
+        _seconds = time.toInt()
+    }
+
+    constructor(time: Double) : this(time, 0, InternationalTimeSeps)
+
+    constructor(time: String?, localize: LocalTimeSeps = InternationalTimeSeps) : this(localize) {
         if (time != null) _evaluate_time(time)
     }
 
@@ -195,9 +234,9 @@ open class Time {
         val seconds = _seconds % 60
         val fraction = _fraction.toString()
         return when {
-            hours > 0 -> "%d:%02d:%02d%s".format(hours, minutes, seconds, fraction)
-            minutes > 0 -> "%2d:%02d%s".format(minutes, seconds, fraction)
-            else -> "%2d%s".format(seconds, fraction)
+            hours > 0 -> "$hours${_local.hSep}${minutes.toString().padStart(2, '0')}${_local.mSep}${seconds.toString().padStart(2, '0')}${fractionSuffix(fraction)}"
+            minutes > 0 -> "$minutes${_local.mSep}${seconds.toString().padStart(2, '0')}${fractionSuffix(fraction)}"
+            else -> "$seconds${fractionSuffix(fraction)}"
         }
     }
 
@@ -229,8 +268,28 @@ open class Time {
 
     fun get_error_message(): String = _error_msg
 
+    fun get_precision(): UShort = if (_fraction.precision > 0u) _fraction.precision else 1u
+
     fun clr_error() {
         _error_msg = ""
+    }
+
+    fun set_hms_sep(hSep: Char, mSep: Char, sSep: Char, forceSecSep: Boolean = false) {
+        _local = LocalTimeSeps(hSep, mSep, sSep, forceSecSep)
+    }
+
+    fun set_hms_sep(timeSeps: String, forceSecSep: Boolean = false) {
+        _local = LocalTimeSeps(timeSeps, forceSecSep)
+    }
+
+    fun set_hms_sep(local: LocalTimeSeps) {
+        _local = local
+    }
+
+    protected fun fractionSuffix(fraction: String): String = if (fraction.isEmpty()) {
+        if (_local.forceSecSep) _local.sSep.toString() else ""
+    } else {
+        "${_local.sSep}$fraction"
     }
 
     private fun _evaluate_data(h: UShort, m: UByte, s: UByte, frac: SecondFraction) {
@@ -278,11 +337,13 @@ open class Time {
         _error_msg = "bad time string: $str"
     }
 
+    private fun escaped(value: Char): String = Regex.escape(value.toString())
+
     private fun _evaluate_hms_ratio(str: String) : Boolean {
         try {
             clr_error()
 
-            val hoursWithFraction = Regex("^(\\d+):(\\d{2}):(\\d{2}) (\\d+)/(\\d+)$").matchEntire(str)
+            val hoursWithFraction = Regex("^(\\d+)${escaped(_local.hSep)}(\\d{2})${escaped(_local.mSep)}(\\d{2}) (\\d+)/(\\d+)$").matchEntire(str)
             if (hoursWithFraction != null) {
                 val groups = hoursWithFraction.groupValues
                 _seconds = 3600 * groups[1].toInt() + 60 * groups[2].toInt() + groups[3].toInt()
@@ -300,7 +361,7 @@ open class Time {
         try {
             clr_error()
 
-            val hoursWithDecimal = Regex("^(\\d+):(\\d{2}):(\\d{2})(?:\\.(\\d+))?$").matchEntire(str)
+            val hoursWithDecimal = Regex("^(\\d+)${escaped(_local.hSep)}(\\d{2})${escaped(_local.mSep)}(\\d{2})(?:${escaped(_local.sSep)}(\\d+))?$").matchEntire(str)
             if (hoursWithDecimal != null) {
                 val groups = hoursWithDecimal.groupValues
                 _seconds = 3600 * groups[1].toInt() + 60 * groups[2].toInt() + groups[3].toInt()
@@ -318,7 +379,7 @@ open class Time {
         try {
             clr_error()
 
-            val minutesWithFraction = Regex("^(\\d{1,2}):(\\d{2}) (\\d+)/(\\d+)$").matchEntire(str)
+            val minutesWithFraction = Regex("^(\\d{1,2})${escaped(_local.mSep)}(\\d{2}) (\\d+)/(\\d+)$").matchEntire(str)
             if (minutesWithFraction != null) {
                 val groups = minutesWithFraction.groupValues
                 _seconds = 60 * groups[1].toInt() + groups[2].toInt()
@@ -336,7 +397,7 @@ open class Time {
         try {
             clr_error()
 
-            val minutesWithDecimal = Regex("^(\\d+):(\\d{2})(?:\\.(\\d+))?$").matchEntire(str)
+            val minutesWithDecimal = Regex("^(\\d+)${escaped(_local.mSep)}(\\d{2})(?:${escaped(_local.sSep)}(\\d+))?$").matchEntire(str)
             if (minutesWithDecimal != null) {
                 val groups = minutesWithDecimal.groupValues
                 _seconds = 60 * groups[1].toInt() + groups[2].toInt()
@@ -372,7 +433,7 @@ open class Time {
         try {
             clr_error()
 
-            val secondsWithDecimal = Regex("^(\\d{1,2})(?:\\.(\\d+))?$").matchEntire(str)
+            val secondsWithDecimal = Regex("^(\\d{1,2})(?:${escaped(_local.sSep)}(\\d+))?$").matchEntire(str)
             if (secondsWithDecimal != null) {
                 val groups = secondsWithDecimal.groupValues
                 _seconds = groups[1].toInt()
@@ -409,23 +470,35 @@ class HMSTime : Time {
 //=====   HMTime Scores   =================================
 class HMTime : Time {
     constructor(other: HMTime) : super(other)
-    constructor(h: UShort, m: UByte) : super(h, m, 0u)
-    constructor(time: String?) : super(time)
+    constructor(h: UShort, m: UByte, localize: LocalTimeSeps = InternationalTimeSeps) : super(h, m, 0u, localize)
+    constructor(time: String?, localize: LocalTimeSeps = InternationalTimeSeps) : super(localize) {
+        if (time != null) _evaluate_time(time)
+    }
+
+    override fun toString(): String {
+        val hours = _seconds / 3600
+        val minutes = (_seconds % 3600) / 60
+        return if (_local.forceSecSep) {
+            "$hours${_local.hSep}${minutes.toString().padStart(2, '0')}${_local.mSep}"
+        } else {
+            "$hours${_local.hSep}${minutes.toString().padStart(2, '0')}"
+        }
+    }
     
     override fun _evaluate_time(str: String) {
         try {
-            val hoursWithFraction = Regex("^(\\d+):(\\d{2})$").matchEntire(str)
+            val hoursWithFraction = Regex("^(\\d+)${Regex.escape(_local.hSep.toString())}(\\d{2})$").matchEntire(str)
             if (hoursWithFraction != null) {
                 val groups = hoursWithFraction.groupValues
                 _seconds = 3600 * groups[1].toInt() + 60 * groups[2].toInt()
                 clr_error()
             }
             else {
-                _error_msg = "bad HM time string: $str"
+                _error_msg = "erroneous format for 'hours:minutes' time string: '$str'"
             }
         }
         catch (_: NumberFormatException) {
-            _error_msg = "bad HM time string: $str"
+            _error_msg = "erroneous format for 'hours:minutes' time string: '$str'"
         }
     }
 }
@@ -434,16 +507,17 @@ class HMTime : Time {
 //=====   MSTime Scores   =================================
 class MSTime : Time {
     constructor(other: MSTime) : super(other)
-    constructor(m: UByte, s: UByte) : super(0u, m, s)
-    constructor(m: UByte, s: UByte, frac_val: UShort, frac_prec: UShort) : super(0u, m, s, frac_val, frac_prec)
-    constructor(m: UByte, s: UByte, frac: SecondFraction) : super(0u, m, s, frac)
-    constructor(time: String?) : super(time)
+    constructor(m: UByte, s: UByte, localize: LocalTimeSeps = InternationalTimeSeps) : super(0u, m, s, localize)
+    constructor(m: UByte, s: UByte, frac_val: UShort, frac_prec: UShort, localize: LocalTimeSeps = InternationalTimeSeps) : super(0u, m, s, frac_val, frac_prec, localize)
+    constructor(m: UByte, s: UByte, frac: SecondFraction, localize: LocalTimeSeps = InternationalTimeSeps) : super(0u, m, s, frac, localize)
+    constructor(time: Double, precision: Int = 0, localize: LocalTimeSeps = InternationalTimeSeps) : super(time, precision, localize)
+    constructor(time: String?, localize: LocalTimeSeps = InternationalTimeSeps) : super(time, localize)
     
     override fun _evaluate_time(str: String) {
         if (_evaluate_ms_frac(str)) return
         if (_evaluate_ms_ratio(str)) return
         
-        _error_msg = "bad 'minutes:seconds + fraction' time string: $str"
+        _error_msg = "erroneous format for 'minutes:seconds + fraction' time string: '$str'"
     }
 }
 
@@ -451,15 +525,16 @@ class MSTime : Time {
 //=====   STime Scores   ==================================
 class STime : Time {
     constructor(other: STime) : super(other)
-    constructor(s: UByte) : super(0u, 0u, s)
-    constructor(s: UByte, frac_val: UShort, frac_prec: UShort) : super(0u, 0u, s, frac_val, frac_prec)
-    constructor(s: UByte, frac: SecondFraction) : super(0u, 0u, s, frac)
-    constructor(time: String?) : super(time)
+    constructor(s: UByte, frac_val: UShort, frac_prec: UShort, localize: LocalTimeSeps = InternationalTimeSeps) : super(0u, 0u, s, frac_val, frac_prec, localize)
+    constructor(s: UByte, frac: SecondFraction, localize: LocalTimeSeps = InternationalTimeSeps) : super(0u, 0u, s, frac, localize)
+    constructor(s: UInt, localize: LocalTimeSeps = InternationalTimeSeps) : super(s.toDouble(), localize)
+    constructor(time: Double, precision: Int = 0, localize: LocalTimeSeps = InternationalTimeSeps) : super(time, precision, localize)
+    constructor(time: String?, localize: LocalTimeSeps = InternationalTimeSeps) : super(time, localize)
     
     override fun _evaluate_time(str: String) {
         if (_evaluate_s_frac(str)) return
         if (_evaluate_s_ratio(str)) return
         
-        _error_msg = "bad 'seconds + fraction' time string: $str"
+        _error_msg = "erroneous format for 'seconds + fraction' time string: '$str'"
     }
 }
