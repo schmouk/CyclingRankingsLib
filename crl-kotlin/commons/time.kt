@@ -150,19 +150,19 @@ open class Time {
         _evaluate_data(0u, m, s, frac)
     }
 
-    constructor(m: UByte, s: UByte) {
+    constructor(m: UByte, s: UByte, localize: LocalTimeSeps = InternationalTimeSeps) : this(localize) {
         _evaluate_data(0u, m, s)
     }
 
-    constructor(s: UByte, frac_val: UShort, frac_prec: UShort) {
+    constructor(s: UByte, frac_val: UShort, frac_prec: UShort, localize: LocalTimeSeps = InternationalTimeSeps) : this(localize) {
         _evaluate_data(0u, 0u, s, SecondFraction(frac_val, frac_prec))
     }
 
-    constructor(s: UByte, frac: SecondFraction) {
+    constructor(s: UByte, frac: SecondFraction, localize: LocalTimeSeps = InternationalTimeSeps) : this(localize) {
         _evaluate_data(0u, 0u, s, frac)
     }
 
-    constructor(s: UInt) {
+    constructor(s: UInt, localize: LocalTimeSeps = InternationalTimeSeps) : this(localize) {
         if (s < 60u) _evaluate_data(0u, 0u, s.toUByte())
         else _evaluate_data((s / 3600u).toUShort(), ((s % 3600u) / 60u).toUByte(), (s % 60u).toUByte())
     }
