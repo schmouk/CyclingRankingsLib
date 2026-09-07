@@ -66,6 +66,24 @@ namespace crl
     };
 
 
+    //=====   Localization of time separators   ===============
+    struct LocalTimeSeps
+    {
+        char h_sep{ ':' };
+        char m_sep{ ':' };
+        char s_sep{ '.' };
+
+        LocalTimeSeps(const char time_seps[4]) noexcept;
+
+    };
+
+    //-----   Localization Specializations   ------------------
+    extern LocalTimeSeps InternationalTimeSeps;
+    extern LocalTimeSeps DutchTimeSeps;
+    extern LocalTimeSeps EuropeanTimeSeps;
+    extern LocalTimeSeps FrenchTimeSeps;
+
+
     //=====   Time Scores   ===================================
     class Time
     {
@@ -123,9 +141,20 @@ namespace crl
         //-----   Accessors   ---------------------------------
         const std::uint16_t get_precision() const noexcept;
 
+        static void set_hms_sep(const char h_sep, const char m_sep, const char s_sep) noexcept;
+        static void set_hms_sep(const char time_seps[4]) noexcept;
+        static void set_hms_sep(const LocalTimeSeps& local) noexcept;
+
 
     protected:
         //-----------------------------------------------------
+        static char _time_hms_sep[4];
+        enum {
+            _H_SEP = 0,
+            _M_SEP,
+            _S_SEP
+        };
+
         std::int32_t   _seconds{ 0 };
         SecondFraction _fraction{ 0, 1 };
         std::string    _error_msg{};
@@ -153,7 +182,7 @@ namespace crl
 
     //=====   Time Concept   ==================================
     template<typename TimeT>
-    concept type_type = std::derived_from<TimeT, Time>;
+    concept time_type = std::derived_from<TimeT, Time>;
 
 
     //=====   HMS Time Scores   ===============================

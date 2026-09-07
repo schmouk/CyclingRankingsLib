@@ -50,7 +50,7 @@ namespace crl
         AverageSpeed& operator=(AverageSpeed&&) noexcept = default;
 
         //-----   Evaluating speeds with adaptive precision   -----
-        template<crl::type_type TimeT>
+        template<crl::time_type TimeT>
         static const std::string evaluate(const double dist, const TimeT& time) noexcept
         {
             return _evaluate_speed(
@@ -70,7 +70,7 @@ namespace crl
             );
         }
 
-        template<crl::type_type TimeT>
+        template<crl::time_type TimeT>
         const std::string get(const double dist, TimeT& time) noexcept
         {
             return _speed_str = AverageSpeed::evaluate(dist, time);
@@ -102,7 +102,7 @@ namespace crl
     /** /
     //=====   Local Implementations   =========================
     //---------------------------------------------------------
-    template<crl::type_type TimeT>
+    template<crl::time_type TimeT>
     const std::string AverageSpeed::evaluate(const double dist, TimeT& time) noexcept
     {
         return _evaluate_speed(
@@ -124,7 +124,7 @@ namespace crl
     }
 
     //---------------------------------------------------------
-    template<crl::type_type TimeT>
+    template<crl::time_type TimeT>
     const std::string AverageSpeed::get(const double dist, TimeT& time) noexcept
     {
         return _speed_str = AverageSpeed::evaluate(dist, time);

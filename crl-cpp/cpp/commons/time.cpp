@@ -56,14 +56,14 @@ namespace crl
         case 0: case 1:
             return "";
         case 10:
-            return std::format(".{}", value);
+            return std::format("{}", value);
         case 100:
-            return std::format(".{:02d}", value);
+            return std::format("{:02d}", value);
         case 1000:
-            return std::format(".{:03d}", value);
+            return std::format("{:03d}", value);
 
         default:
-            return std::format(" {}/{}", value, precision);
+            return std::format("{}/{}", value, precision);
         }
     }
 
@@ -121,6 +121,7 @@ namespace crl
         return a;
     }
 
+
     //---------------------------------------------------------
     std::uint32_t SecondFraction::_lcm(std::uint32_t a, std::uint32_t b) noexcept
     {
@@ -128,7 +129,25 @@ namespace crl
     }
 
 
+    //=====   Localization of time separators   ===============
+    //---------------------------------------------------------
+    LocalTimeSeps::LocalTimeSeps(const char time_seps[4]) noexcept
+        : h_sep{ time_seps[0] }
+        , m_sep{ time_seps[1] }
+        , s_sep{ time_seps[2] }
+    {}
+
+    //---------------------------------------------------------
+    LocalTimeSeps InternationalTimeSeps{ "::."};
+    LocalTimeSeps DutchTimeSeps{ "um," };
+    LocalTimeSeps EuropeanTimeSeps{ "::," };
+    LocalTimeSeps FrenchTimeSeps{ "h'\"" } ;
+
+
     //=====   Time Scores   ===================================
+    //---------------------------------------------------------
+    char Time::_time_hms_sep[4] = "::.";
+
     //---------------------------------------------------------
     Time::Time(
         const std::uint16_t h,
@@ -288,12 +307,21 @@ namespace crl
         const std::string   frac{ std::string(_fraction) };
 
         if (h > 0)
-            return std::format("{}:{:02d}:{:02d}{}", h, m, s, frac);
+            return std::format(
+                "{}{}{:02d}{}{:02d}{}{}",
+                h, _time_hms_sep[_H_SEP],
+                m, _time_hms_sep[_M_SEP],
+                s, _time_hms_sep[_S_SEP], frac
+            );
         
         if (m > 0)
-            return std::format("{:d}:{:02d}{}", m, s, frac);
+            return std::format(
+                "{:d}{}{:02d}{}{}",
+                m, _time_hms_sep[_M_SEP],
+                s, _time_hms_sep[_S_SEP], frac
+            );
 
-        return std::format("{:d}{}", s, frac);
+        return std::format("{:d}{}{}", s, _time_hms_sep[_S_SEP], frac);
     }
 
     //---------------------------------------------------------
@@ -346,7 +374,7 @@ namespace crl
     //---------------------------------------------------------
     const bool Time::operator<=(const Time& other) const noexcept
     {
-        return *this < other || *this < other;
+        return *this < other || *this == other;
     }
 
     //---------------------------------------------------------
@@ -377,6 +405,30 @@ namespace crl
     const std::uint16_t Time::get_precision() const noexcept
     {
         return _fraction.precision > 0 ? _fraction.precision : 1;
+    }
+
+    //-----------------------------------------------------
+    void Time::set_hms_sep(const char h_sep, const char m_sep, const char s_sep) noexcept
+    {
+        _time_hms_sep[_H_SEP] = h_sep;
+        _time_hms_sep[_M_SEP] = m_sep;
+        _time_hms_sep[_S_SEP] = s_sep;
+    }
+
+    //-----------------------------------------------------
+    void Time::set_hms_sep(const char time_seps[4]) noexcept
+    {
+        _time_hms_sep[_H_SEP] = time_seps[_H_SEP];
+        _time_hms_sep[_M_SEP] = time_seps[_M_SEP];
+        _time_hms_sep[_S_SEP] = time_seps[_S_SEP];
+    }
+
+    //-----------------------------------------------------
+    void Time::set_hms_sep(const LocalTimeSeps& local) noexcept
+    {
+        _time_hms_sep[_H_SEP] = local.h_sep;
+        _time_hms_sep[_M_SEP] = local.m_sep;
+        _time_hms_sep[_S_SEP] = local.s_sep;
     }
 
     //-----------------------------------------------------
@@ -461,7 +513,7 @@ namespace crl
         _error_msg.clear();
 
         if (std::regex_search(time_str, time_matches,
-            std::regex("^(\\d\\d*):(\\d\\d):(\\d\\d) (\\d+)/(\\d+)")))
+            std::regex("^(\\d\\d*).(\\d\\d).(\\d\\d).(\\d+)/(\\d+)")))
         {
             // Match h, m, s and fraction!
             const std::int32_t h{ std::stol(time_matches[1]) };
@@ -484,7 +536,7 @@ namespace crl
         _error_msg.clear();
 
         if (std::regex_search(time_str, time_matches,
-            std::regex("^(\\d\\d*):(\\d\\d):(\\d\\d)(\\.(\\d+))?")))
+            std::regex("^(\\d\\d*).(\\d\\d).(\\d\\d)(.(\\d+))?$")))
         {
             // Match h, m, s and maybe fraction!
             const std::int32_t h{ std::stol(time_matches[1]) };
@@ -507,7 +559,7 @@ namespace crl
         _error_msg.clear();
 
         if (std::regex_search(time_str, time_matches,
-            std::regex("^(\\d\\d?):(\\d\\d) (\\d+)/(\\d+)")))
+            std::regex("^(\\d\\d?).(\\d\\d).(\\d+)/(\\d+)$")))
         {
             // Match m, s and fraction!
             const std::int32_t m{ std::stol(time_matches[1]) };
@@ -529,7 +581,7 @@ namespace crl
         _error_msg.clear();
 
         if (std::regex_search(time_str, time_matches,
-            std::regex("^(\\d\\d*):(\\d\\d)(\\.(\\d+))?")))
+            std::regex("^(\\d\\d*).(\\d\\d)(.(\\d+))?$")))
         {
             // Match m, s and maybe fraction!
             const std::int32_t m{ std::stol(time_matches[1]) };
@@ -551,7 +603,7 @@ namespace crl
         _error_msg.clear();
 
         if (std::regex_search(time_str, time_matches,
-            std::regex("^(\\d\\d?) (\\d+)/(\\d+)")))
+            std::regex("^(\\d\\d?).(\\d+)/(\\d+)$")))
         {
             // Match s and fraction!
             _seconds = std::stol(time_matches[1]);
@@ -570,7 +622,7 @@ namespace crl
         _error_msg.clear();
 
         if (std::regex_search(time_str, time_matches,
-            std::regex("^(\\d\\d?)(\\.(\\d+))?")))
+            std::regex("^(\\d\\d?)(.(\\d+))?$")))
         {
             // Match s and maybe fraction!
             _seconds = std::stol(time_matches[1]);
