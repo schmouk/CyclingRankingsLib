@@ -22,6 +22,7 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="commons\archive\time.py" />
     <Compile Include="commons\teams.py" />
     <Compile Include="commons\time.py" />
     <Compile Include="commons\types.py" />

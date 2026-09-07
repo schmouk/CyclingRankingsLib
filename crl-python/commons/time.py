@@ -25,7 +25,6 @@ If not, see <https://www.gnu.org/licenses/>.
 import copy
 import re
 import sys
-from typing import Optional
 
 
 #======   Time Fraction of Seconds   ==========================
@@ -208,8 +207,6 @@ class Time:
 
         elif m is None or s is None:
             # Erroneous constructor
-            self._seconds: int = 0
-            self._fraction: SecondFraction = SecondFraction(0, 1)
             self._error_msg: str = \
                 f"Erroneous format for creation of a Time: ({h}{self._h_sep}{m}{self._m_sep}{s})"
 
@@ -229,6 +226,11 @@ class Time:
             return sys.maxsize
 
     #----------------------------------------------------------
+    def __float__(self) -> float:
+        """Convert to float."""
+        return float(self._seconds) + float(self._fraction)
+
+    #----------------------------------------------------------
     def set(self, other: Time | str) -> Time:
         """Deep copy of another Time object."""
         if isinstance(other, Time):
@@ -241,11 +243,6 @@ class Time:
 
         else:
             self._error_msg = f'bad type for method "set()" argument: argument type must be either Time or str (currently is {type(other)}).'
-
-    #----------------------------------------------------------
-    def __float__(self) -> float:
-        """Convert to float."""
-        return float(self._seconds) + float(self._fraction)
 
     #----------------------------------------------------------
     def __str__(self) -> str:
@@ -343,7 +340,7 @@ class Time:
         return self._seconds == other._seconds and self._fraction == other._fraction
 
     #----------------------------------------------------------
-    def __neq__(self, other: Time) -> bool:
+    def __ne__(self, other: Time) -> bool:
         """Equality operator."""
         return not(self == other)
 
@@ -390,28 +387,25 @@ class Time:
     #----------------------------------------------------------
     def set_hms_sep(self, h_sep: str | LocalTimeSeps, m_sep: str | None = None, s_sep: str | None = None) -> None:
         """Sets the time separators."""
-        try:
-            if m_sep:
-                if s_sep:
-                    if len(h_sep) == 1 and len(m_sep) == 1 and len(s_sep) == 1:
-                        self._time_hms_sep = h_sep + m_sep + s_sep
-                    else:
-                        raise Exception()
-                else:
-                    raise Exception()
-            else:
-                if isinstance(h_sep, str):
-                    # passed a string of 3 chars
-                    if len(h_sep) == 3:
-                        self._time_hms_sep = h_sep
-                    else:
-                        raise Exception()
-                elif isinstance(h_sep, LocalTimeSeps):
-                    # passed an instance of LocalTimeSeps
-                    self._local = h_sep
-        except:
-            self._error_msg = f"erroneous arguments list for 'Time.set_hms_sep': ({h_sep}, {m_sep}, {s_sep})"
-            self.set_hms_sep(InternationalTimeSeps)
+        if m_sep is not None and s_sep is not None:
+            if len(h_sep) == 1 and len(m_sep) == 1 and len(s_sep) == 1:
+                self._time_hms_sep = h_sep + m_sep + s_sep
+                return
+
+        elif isinstance(h_sep, str):
+            # passed a string of 3 chars
+            if len(h_sep) == 3:
+                self._time_hms_sep = h_sep
+                return
+
+        elif isinstance(h_sep, LocalTimeSeps):
+            # passed an instance of LocalTimeSeps
+            self._local = h_sep
+            return
+
+        # an error occured on the passed arguments
+        self._error_msg = f"erroneous arguments list for 'Time.set_hms_sep': ({h_sep}, {m_sep}, {s_sep})"
+        self.set_hms_sep(InternationalTimeSeps)
 
     #----------------------------------------------------------
     def _evaluate_data(
@@ -443,7 +437,7 @@ class Time:
             self.clr_error()
 
     #----------------------------------------------------------
-    def _evaluate_frac(self, frac_str: str, frac_precision: str|None = None) -> None:
+    def _evaluate_frac(self, frac_str: str, frac_precision: str | None = None) -> None:
         """Evaluate fraction from string representation."""
         self.clr_error()
 
@@ -601,8 +595,8 @@ class HMTime(Time):
     #----------------------------------------------------------
     def __init__(
         self,
-        h: Optional[int] = None,
-        m: Optional[int] = None
+        h: int | None = None,
+        m: int | None = None
     ) -> None:
         super().__init__(h, m, None, None, None)
         
@@ -626,10 +620,10 @@ class MSTime(Time):
     #----------------------------------------------------------
     def __init__(
         self,
-        m: Optional[int] = None,
-        s: Optional[int] = None,
-        frac_val: Optional[int | SecondFraction] = None,
-        frac_prec: Optional[int] = None
+        m: int | None = None,
+        s: int | None = None,
+        frac_val: int | SecondFraction | None = None,
+        frac_prec: int | None = None
     ) -> None:
         super().__init__(0, m, s, frac_val, frac_prec)
              
@@ -649,9 +643,9 @@ class STime(Time):
     #----------------------------------------------------------
     def __init__(
         self,
-        s: Optional[int] = None,
-        frac_val: Optional[int | SecondFraction] = None,
-        frac_prec: Optional[int] = None
+        s: int | None = None,
+        frac_val: int | SecondFraction | None = None,
+        frac_prec: int | None = None
     ) -> None:
         super().__init__(0, 0, s, frac_val, frac_prec)
              
@@ -669,7 +663,7 @@ class STime(Time):
 #=====   Time Scores - creation from float value   ============
 class FltTime(Time):
     #----------------------------------------------------------
-    def __init__(self, time_val: float, precision: Optional[int] = None) -> None:
+    def __init__(self, time_val: float, precision: int | None = None) -> None:
         """Initialize from a double value with maybe precision."""
         super().__init__()
 
