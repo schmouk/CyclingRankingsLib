@@ -3,12 +3,21 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include "commons/time.h"
+#include "commons/types.h"
 #include "utils/average_speed.h"
+#include "utils/heats_compositing.h"
+#include "utils/random.h"
 
 int main()
 {
+    crl::Rand rnd1{ 0xabcd'1230'4560'7890 };
+    crl::FullyRandomHeatsComposition<crl::RiderId> heats1{ rnd1, {1, 2, 3, 4, 5, 6, 7} };
+
+    crl::FullyRandomHeatsComposition<crl::RiderId>::heats_list_type heats{ heats1.compose_heats(2) };
+
     /** /
     crl::AverageSpeed avg{205, crl::HMSTime(5, 15, 29)};
     std::cout << avg.get() << " km/h\n";
@@ -22,7 +31,7 @@ int main()
     std::cout << avg.evaluate(0.2, crl::STime(11.101, 1000)) << " km/h\n";
     /**/
 
-    /**/
+    /** /
     crl::Time t{ "103:31:15.00" };
     std::cout << std::string(t) << '\n';
 

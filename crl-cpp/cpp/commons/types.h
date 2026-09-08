@@ -30,8 +30,9 @@
 namespace crl
 {
     //=====   Identifiers Types   =============================
-    using RiderId  = std::uint32_t;
-    using TeamId   = std::uint32_t;
+    using Bib      = std::uint32_t;  // Notice: French translation: "dossard"
+    using RiderId  = Bib;
+    using TeamId   = Bib;
 
     using StageId  = std::uint32_t;
     using KomId    = std::uint32_t;

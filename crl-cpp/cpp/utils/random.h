@@ -65,6 +65,10 @@ namespace crl
 
         template<typename T = std::uint64_t>
             requires std::is_arithmetic_v<T>
+        const T operator() (const T min, const T max) noexcept;
+
+        template<typename T = std::uint64_t>
+            requires std::is_arithmetic_v<T>
         std::vector<T> operator() (const std::vector<T>& min, const std::vector<T>& max) noexcept;
 
 
@@ -108,6 +112,14 @@ namespace crl
 
 
     //=====   IMPLEMENTATIONS   ===============================
+    //---------------------------------------------------------
+    template<typename T>
+        requires std::is_arithmetic_v<T>
+    const T Rand::operator() (const T min, const T max) noexcept
+    {
+        return min + static_cast<T>((max - min) * uniform());
+    }
+
     //---------------------------------------------------------
     template<typename T>
         requires std::is_arithmetic_v<T>
