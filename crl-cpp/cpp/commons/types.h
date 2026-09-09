@@ -52,7 +52,7 @@ namespace crl
 
 
     //=====   Points Scores   =================================
-    using PointScore     = std::int16_t;
+    using Points         = std::int16_t;
     using BoardGameScore = std::int16_t;
 
 }
