@@ -37,31 +37,8 @@
 
 namespace crl
 {
-    //=====   Competitor Descr Base Class   ===================
-    template<typename PerfT>
-        requires (std::is_copy_assignable_v<PerfT> && std::totally_ordered<PerfT>)
-    struct CompetitorDescr
-    {
-        crl::Bib id;    // The competitor identifier
-        PerfT    perf;  // The related score to be used for the heats compositions
-
-        const bool operator< (const CompetitorDescr& other) const noexcept {
-            return perf < other.perf;
-        }
-
-        const bool operator== (const CompetitorDescr& other) const noexcept {
-            return perf == other.perf;
-        }
-    };
-
-    //-----   A few Specializations   -------------------------
-    using PointsCompetitorDescr = CompetitorDescr<std::int32_t>;
-    using TimeCompetitorDescr   = CompetitorDescr<crl::Time>;
-
-
     //=====   Heats Compositing Base Class   ==================
     template<typename CompetitorT = crl::Bib>
-        requires std::is_copy_assignable_v<CompetitorT>
     class HeatsCompositionBase
     {
     public:
@@ -80,6 +57,13 @@ namespace crl
         {}
 
         HeatsCompositionBase(
+            const competitors_list_type& competitors
+        ) noexcept
+            : _competitors_list{ competitors }
+            , _rand_ptr{ nullptr }
+        {}
+
+        HeatsCompositionBase(
             Rand& rand,
             const competitors_list_type& competitors
         ) noexcept
@@ -87,12 +71,13 @@ namespace crl
             , _rand_ptr{ &rand }
         {}
 
+        HeatsCompositionBase() noexcept = default;
         virtual ~HeatsCompositionBase() noexcept = default;
 
-        HeatsCompositionBase(const HeatsCompositionBase&) = delete;
-        HeatsCompositionBase(HeatsCompositionBase&&) = delete;
-        HeatsCompositionBase& operator=(const HeatsCompositionBase&) = delete;
-        HeatsCompositionBase& operator=(HeatsCompositionBase&&) = delete;
+        HeatsCompositionBase(const HeatsCompositionBase&) = default;
+        HeatsCompositionBase(HeatsCompositionBase&&) = default;
+        HeatsCompositionBase& operator=(const HeatsCompositionBase&) = default;
+        HeatsCompositionBase& operator=(HeatsCompositionBase&&) = default;
 
 
         //-----   Operations   --------------------------------
@@ -114,7 +99,6 @@ namespace crl
 
     //=====   Fully Random Heats Compositing Base Class   =====
     template<typename CompetitorT = crl::Bib>
-        requires std::is_copy_assignable_v<CompetitorT>
     struct FullyRandomHeatsComposition : public HeatsCompositionBase<CompetitorT>
     {
         using MyBaseClass           = HeatsCompositionBase<CompetitorT>;
@@ -135,6 +119,12 @@ namespace crl
             : MyBaseClass{ rand, competitors }
         {}
 
+        FullyRandomHeatsComposition() noexcept = default;
+        FullyRandomHeatsComposition(const FullyRandomHeatsComposition&) noexcept = default;
+        FullyRandomHeatsComposition(FullyRandomHeatsComposition&&) noexcept = default;
+        FullyRandomHeatsComposition& operator= (const FullyRandomHeatsComposition&) noexcept = default;
+        FullyRandomHeatsComposition& operator= (FullyRandomHeatsComposition&&) noexcept = default;
+
         virtual ~FullyRandomHeatsComposition() noexcept = default;
 
 
@@ -149,17 +139,57 @@ namespace crl
 
     };
 
+
+    //=====   Forward/Backward Heats Compositing Base Class   =====
+    template<typename CompetitorT = crl::Bib>
+    struct FrwdBkwdHeatsComposition : public HeatsCompositionBase<CompetitorT>
+    {
+        using MyBaseClass = HeatsCompositionBase<CompetitorT>;
+        using competitors_list_type = MyBaseClass::competitors_list_type;
+        using heats_list_type = MyBaseClass::heats_list_type;
+
+        //-----   Constructors / Destructor   -----------------
+        FrwdBkwdHeatsComposition() noexcept
+            : MyBaseClass{}
+        {}
+
+        FrwdBkwdHeatsComposition(const competitors_list_type& competitors) noexcept
+            : MyBaseClass{ competitors }
+        {}
+
+        FrwdBkwdHeatsComposition(const FrwdBkwdHeatsComposition&) noexcept = default;
+        FrwdBkwdHeatsComposition(FrwdBkwdHeatsComposition&&) noexcept = default;
+        FrwdBkwdHeatsComposition& operator= (const FrwdBkwdHeatsComposition&) noexcept = default;
+        FrwdBkwdHeatsComposition& operator= (FrwdBkwdHeatsComposition&&) noexcept = default;
+
+        virtual ~FrwdBkwdHeatsComposition() noexcept = default;
+
+
+        //-----   Operations   --------------------------------
+        heats_list_type compose_n_heats(
+            const unsigned int heats_nb
+        ) noexcept;
+
+        heats_list_type compose_heats(
+            const unsigned int competitors_count
+        ) noexcept;
+
+        heats_list_type compose_heats(
+            const unsigned int competitors_count,
+            const unsigned int nb_competitors_per_heat
+        ) noexcept;
+
+    };
+
 }
 
 
 //=====   Local Implementations   =============================
 namespace crl
 {
-
     //=====   Fully Random Heats Compositing Base Class   =====
     //---------------------------------------------------------
     template<typename CompetitorT>
-        requires std::is_copy_assignable_v<CompetitorT>
     FullyRandomHeatsComposition<CompetitorT>::heats_list_type FullyRandomHeatsComposition<CompetitorT>::compose_n_heats(
         const unsigned int heats_nb
     ) noexcept
@@ -172,7 +202,6 @@ namespace crl
 
     //---------------------------------------------------------
     template<typename CompetitorT>
-        requires std::is_copy_assignable_v<CompetitorT>
     FullyRandomHeatsComposition<CompetitorT>::heats_list_type FullyRandomHeatsComposition<CompetitorT>::compose_heats(
         const unsigned int competitors_min_count
     ) noexcept
@@ -195,5 +224,70 @@ namespace crl
         return heats_list;
     }
 
+    //=====   Forward/Backward Heats Compositing Base Class   =====
+    //---------------------------------------------------------
+    template<typename CompetitorT>
+    FrwdBkwdHeatsComposition<CompetitorT>::heats_list_type FrwdBkwdHeatsComposition<CompetitorT>::compose_n_heats(
+        const unsigned int heats_nb
+    ) noexcept
+    {
+        return compose_heats(static_cast<unsigned int>(this->_competitors_list.size()));
+    }
+
+    //---------------------------------------------------------
+    template<typename CompetitorT>
+    FrwdBkwdHeatsComposition<CompetitorT>::heats_list_type FrwdBkwdHeatsComposition<CompetitorT>::compose_heats(
+        const unsigned int competitors_count
+    ) noexcept
+    {
+        return compose_heats(competitors_count, 2);
+    }
+
+    //---------------------------------------------------------
+    template<typename CompetitorT>
+    FrwdBkwdHeatsComposition<CompetitorT>::heats_list_type FrwdBkwdHeatsComposition<CompetitorT>::compose_heats(
+        const unsigned int competitors_count,
+        const unsigned int nb_competitors_per_heat
+    ) noexcept
+    {
+        const unsigned int heats_count{
+            competitors_count / nb_competitors_per_heat +
+            (competitors_count % nb_competitors_per_heat != 0)
+        };
+
+        heats_list_type heats_list{ heats_count };
+
+        std::partial_sort(
+            this->_competitors_list.begin(),
+            this->_competitors_list.begin() + competitors_count,
+            this->_competitors_list.end()
+        );
+
+        unsigned int comp_nb{ competitors_count };
+        auto fwd_heats_it{ heats_list.begin() };
+        auto bwd_heats_it{ heats_list.rbegin() };
+        auto comp_it{ this->_competitors_list.begin() };
+        for (unsigned int comp_nb{ competitors_count }; comp_nb != 0; --comp_nb ) {
+            if (fwd_heats_it != heats_list.end()) {
+                fwd_heats_it->push_back(*comp_it);
+                ++comp_it;
+                ++fwd_heats_it;
+            }
+            else if (bwd_heats_it != heats_list.rend()) {
+                bwd_heats_it->push_back(*comp_it);
+                ++comp_it;
+                ++bwd_heats_it;
+            }
+            else {
+                fwd_heats_it = heats_list.begin();
+                bwd_heats_it = heats_list.rbegin();
+                fwd_heats_it->push_back(*comp_it);
+                ++comp_it;
+                ++fwd_heats_it;
+            }
+        }
+
+        return heats_list;
+    }
 
 }

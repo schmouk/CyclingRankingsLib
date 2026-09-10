@@ -8,15 +8,30 @@
 #include "commons/time.h"
 #include "commons/types.h"
 #include "utils/average_speed.h"
+#include "utils/competitor_descr.h"
 #include "utils/heats_compositing.h"
 #include "utils/random.h"
 
 int main()
 {
     crl::Rand rnd1{ 0xabcd'1230'4560'7890 };
-    crl::FullyRandomHeatsComposition<crl::RiderId> heats1{ rnd1, {1, 2, 3, 4, 5, 6, 7} };
 
-    crl::FullyRandomHeatsComposition<crl::RiderId>::heats_list_type heats{ heats1.compose_heats(2) };
+    crl::FullyRandomHeatsComposition<crl::RiderId> heats1{ rnd1, {1, 2, 3, 4, 5, 6, 7} };
+    crl::FullyRandomHeatsComposition<crl::RiderId>::heats_list_type heats1_compos{ heats1.compose_heats(2) };
+
+    using Perf = crl::PointsCompetitorDescr;
+    using Points = crl::PointsScore;
+    std::vector<Perf> competitors2{
+        Perf{1, 123},
+        Perf{2, 1},
+        Perf{3, -1},
+        Perf{4, 16},
+        Perf{5, 25},
+        Perf{6, 21},
+        Perf{7, 13}
+    };
+    crl::FrwdBkwdHeatsComposition<Perf> heats2{ competitors2 };
+    crl::FrwdBkwdHeatsComposition<Perf>::heats_list_type heats2_compos{ heats2.compose_heats(5) };
 
     /** /
     crl::AverageSpeed avg{205, crl::HMSTime(5, 15, 29)};

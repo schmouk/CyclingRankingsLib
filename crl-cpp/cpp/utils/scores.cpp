@@ -33,7 +33,7 @@ namespace crl
 {
     //=====   Points+Ranks Scores   ===========================
     //---------------------------------------------------------
-    const bool PointsRanksScore::operator< (const PointsRanksScore& other) const noexcept
+    bool PointsRanksScore::operator< (const PointsRanksScore& other) const noexcept
     {
         // greater points wins
         if (points != other.points)
@@ -47,12 +47,12 @@ namespace crl
         if (best_rank_count != other.best_rank_count)
             return best_rank_count > other.best_rank_count;
 
-        // everything else bein equal, the more recent best-rank wins
+        // everything else being equal, the more recent best-rank wins
         return last_stage_best_rank > other.last_stage_best_rank;
     }
 
     //---------------------------------------------------------
-    const bool PointsRanksScore::operator== (const PointsRanksScore& other) const noexcept
+    bool PointsRanksScore::operator== (const PointsRanksScore& other) const noexcept
     {
         return points == other.points &&
             best_rank == other.best_rank &&
@@ -63,7 +63,7 @@ namespace crl
 
     //=====   Points KOM Scores   =============================
     //---------------------------------------------------------
-    const bool PointsKOMScore::operator< (const PointsKOMScore& other) const noexcept
+    bool PointsKOMScore::operator< (const PointsKOMScore& other) const noexcept
     {
         // greater points wins
         if (points != other.points)
@@ -82,7 +82,7 @@ namespace crl
     }
 
     //---------------------------------------------------------
-    const bool PointsKOMScore::operator== (const PointsKOMScore& other) const noexcept
+    bool PointsKOMScore::operator== (const PointsKOMScore& other) const noexcept
     {
         return points == other.points &&
             best_kom_cat_win == other.best_kom_cat_win &&

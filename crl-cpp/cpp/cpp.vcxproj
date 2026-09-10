@@ -173,6 +173,7 @@
     <ClInclude Include="commons\types.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="utils\average_speed.h" />
+    <ClInclude Include="utils\competitor_descr.h" />
     <ClInclude Include="utils\heats_compositing.h" />
     <ClInclude Include="utils\scores.h" />
     <ClInclude Include="utils\random.h" />
