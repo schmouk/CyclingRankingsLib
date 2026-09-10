@@ -25,12 +25,9 @@
 */
 
 #include <algorithm>
-#include <concepts>
-#include <cstdint>
-#include <type_traits>
+#include <exception>
 #include <vector>
 
-#include "../commons/time.h"
 #include "../commons/types.h"
 #include "../utils/random.h"
 
@@ -83,11 +80,15 @@ namespace crl
         //-----   Operations   --------------------------------
         virtual heats_list_type compose_n_heats(
             const unsigned int heats_nb
-        ) = 0;
+        ) {
+            throw std::exception("method 'compose_n_heats(const unsigned int heats_nb)' is not implemented.");
+        }
 
         virtual heats_list_type compose_heats(
             const unsigned int competitors_min_count  // The min number of competitors per heat
-        ) = 0;
+        ) {
+            throw std::exception("method 'compose_heats(const unsigned int competitors_min_count)' is not implemented.");
+        }
 
 
     protected:
@@ -97,7 +98,7 @@ namespace crl
     };
 
 
-    //=====   Fully Random Heats Compositing Base Class   =====
+    //=====   Fully Random Heats Compositing Class   ==========
     template<typename CompetitorT = crl::Bib>
     struct FullyRandomHeatsComposition : public HeatsCompositionBase<CompetitorT>
     {
@@ -131,22 +132,22 @@ namespace crl
         //-----   Operations   --------------------------------
         heats_list_type compose_n_heats(
             const unsigned int heats_nb
-        ) noexcept;
+        ) noexcept override;
 
         heats_list_type compose_heats(
             const unsigned int competitors_min_count  // The min number of competitors per heat
-        ) noexcept;
+        ) noexcept override;
 
     };
 
 
-    //=====   Forward/Backward Heats Compositing Base Class   =====
+    //=====   Forward/Backward Heats Compositing Class   ======
     template<typename CompetitorT = crl::Bib>
     struct FrwdBkwdHeatsComposition : public HeatsCompositionBase<CompetitorT>
     {
-        using MyBaseClass = HeatsCompositionBase<CompetitorT>;
+        using MyBaseClass           = HeatsCompositionBase<CompetitorT>;
         using competitors_list_type = MyBaseClass::competitors_list_type;
-        using heats_list_type = MyBaseClass::heats_list_type;
+        using heats_list_type       = MyBaseClass::heats_list_type;
 
         //-----   Constructors / Destructor   -----------------
         FrwdBkwdHeatsComposition() noexcept
@@ -168,17 +169,47 @@ namespace crl
         //-----   Operations   --------------------------------
         heats_list_type compose_n_heats(
             const unsigned int heats_nb
-        ) noexcept;
+        ) noexcept override;
 
         heats_list_type compose_heats(
             const unsigned int competitors_count
-        ) noexcept;
+        ) noexcept override;
 
         heats_list_type compose_heats(
             const unsigned int competitors_count,
             const unsigned int nb_competitors_per_heat
         ) noexcept;
 
+    };
+
+
+    //=====   1-2 and 3-4 Finals Compositing Class   ==========
+    template<typename CompetitorT>
+    struct Finals_12_34_Composition : public HeatsCompositionBase<CompetitorT>
+    {
+        using MyBaseClass           = HeatsCompositionBase<CompetitorT>;
+        using competitors_list_type = MyBaseClass::competitors_list_type;
+        using heat_type             = MyBaseClass::heat_type;
+        using heats_list_type       = MyBaseClass::heats_list_type;
+
+        //-----   Constructors / Destructor   -----------------
+        Finals_12_34_Composition() noexcept
+            : MyBaseClass{}
+        {}
+
+        Finals_12_34_Composition(const competitors_list_type& competitors) noexcept
+            : MyBaseClass{ competitors }
+        {}
+
+        Finals_12_34_Composition(const Finals_12_34_Composition&) noexcept = default;
+        Finals_12_34_Composition(Finals_12_34_Composition&&) noexcept = default;
+        Finals_12_34_Composition& operator= (const Finals_12_34_Composition&) noexcept = default;
+        Finals_12_34_Composition& operator= (Finals_12_34_Composition&&) noexcept = default;
+
+        virtual ~Finals_12_34_Composition() noexcept = default;
+
+        //-----   Operations   --------------------------------
+        heats_list_type compose_finals() noexcept;
     };
 
 }
@@ -288,6 +319,50 @@ namespace crl
         }
 
         return heats_list;
+    }
+
+
+    //=====   1-2 and 3-4 Finals Compositing Class   ==========
+    //---------------------------------------------------------
+    template<typename CompetitorT>
+    Finals_12_34_Composition<CompetitorT>::heats_list_type Finals_12_34_Composition<CompetitorT>::compose_finals() noexcept
+    {
+        const std::size_t competitors_count{ std::min<std::size_t>(4, this->_competitors_list.size()) };
+
+        if (competitors_count > 1)
+            std::partial_sort(
+                this->_competitors_list.begin(),
+                this->_competitors_list.begin() + competitors_count,
+                this->_competitors_list.end()
+            );
+
+        switch (competitors_count) {
+        case 0:
+            return heats_list_type();
+
+        case 1:
+            return heats_list_type{
+                heat_type{ this->_competitors_list[0] }
+            };
+
+        case 2:
+            return heats_list_type{
+                heat_type{ this->_competitors_list[0], this->_competitors_list[1] }
+            };
+
+        case 3:
+            return heats_list_type{
+                heat_type{ this->_competitors_list[0], this->_competitors_list[1] },
+                heat_type{ this->_competitors_list[2] }
+            };
+
+        case 4:
+        default:
+            return heats_list_type{
+                heat_type{ this->_competitors_list[0], this->_competitors_list[1] },
+                heat_type{ this->_competitors_list[2], this->_competitors_list[3] }
+            };
+        }
     }
 
 }

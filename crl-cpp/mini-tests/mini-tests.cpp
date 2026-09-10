@@ -11,6 +11,7 @@
 #include "utils/competitor_descr.h"
 #include "utils/heats_compositing.h"
 #include "utils/random.h"
+#include "utils/scores.h"
 
 int main()
 {
@@ -32,6 +33,9 @@ int main()
     };
     crl::FrwdBkwdHeatsComposition<Perf> heats2{ competitors2 };
     crl::FrwdBkwdHeatsComposition<Perf>::heats_list_type heats2_compos{ heats2.compose_heats(5) };
+
+    crl::Finals_12_34_Composition<Perf> heats3{ std::vector<Perf>{ Perf{1, 123}, Perf{4, 16}, Perf{5, 25} } };  //competitors2 };
+    crl::Finals_12_34_Composition<Perf>::heats_list_type heats3_compos{ heats3.compose_finals() };
 
     /** /
     crl::AverageSpeed avg{205, crl::HMSTime(5, 15, 29)};
