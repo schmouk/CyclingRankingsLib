@@ -44,7 +44,7 @@ namespace crl
     *   struct FullyRandomHeatsComposition : public HeatsCompositionBase<CompetitorT>;
     *
     * - template<typename CompetitorT = crl::Bib>
-    *   using TeamComposition = std::vector<CompetitorT>;
+    *   struct TeamComposition<CompetitorT>;
     *
     * - template<typename CompetitorT = crl::Bib>
     *   struct FullyRandomTeamsBestDispatchHeatsComposition : public HeatsCompositionBase<CompetitorT>;
@@ -153,7 +153,17 @@ namespace crl
     //=====   Fully Random Teams Best Dispatch Heats Compositing Class   ==========
     //---------------------------------------------------------
     template<typename CompetitorT = crl::Bib>
-    using TeamComposition = std::vector<CompetitorT>;
+    struct TeamComposition
+    {
+        crl::Bib                 team_id;
+        std::vector<CompetitorT> team_composition;
+    };
+
+
+    //---------------------------------------------------------
+    template<typename CompetitorT = crl::Bib>
+    using TeamsCompositionsList = std::vector<TeamComposition<CompetitorT>>;
+
 
     //---------------------------------------------------------
     template<typename CompetitorT = crl::Bib>
@@ -170,7 +180,7 @@ namespace crl
 
         FullyRandomTeamsBestDispatchHeatsComposition(
             Rand& rand,
-            const std::vector<TeamComposition<CompetitorT>>& teams_compositions
+            const TeamsCompositionsList<CompetitorT>& teams_compositions
         ) noexcept;
 
         FullyRandomTeamsBestDispatchHeatsComposition() noexcept = default;
@@ -322,7 +332,7 @@ namespace crl
     template<typename CompetitorT>
     FullyRandomTeamsBestDispatchHeatsComposition<CompetitorT>::FullyRandomTeamsBestDispatchHeatsComposition(
         Rand& rand,
-        const std::vector<TeamComposition<CompetitorT>>& teams_compositions
+        const TeamsCompositionsList<CompetitorT>& teams_compositions
     ) noexcept
         : MyBaseClass{ rand }
     {
@@ -333,8 +343,9 @@ namespace crl
                 this->_competitors_list.end(),
                 team_compo
             );
-            //for (auto& comp : team_compo)
-            //    _competitors_list.push_back(comp);
+            // Notice: c++11 below
+            // for (auto& comp : team_compo)
+            //    this->_competitors_list.push_back(comp);
     }
 
     //---------------------------------------------------------
@@ -344,7 +355,8 @@ namespace crl
             const unsigned int heats_nb
         ) noexcept
     {
-        heats_list_type heats_list;
+        heats_list_type heats_list{};
+
 
         return heats_list;
     }
@@ -356,9 +368,10 @@ namespace crl
             const unsigned int competitors_min_count  // The min number of competitors per heat
         ) noexcept
     {
-        heats_list_type heats_list;
-
-        return heats_list;
+        const unsigned int competitors_count{ static_cast<unsigned int>(this->_competitors_list.size) };
+        const unsigned int heats_count{ competitors_count / competitors_min_count };
+        
+        return compose_n_heats(heats_count);
     }
 
 
