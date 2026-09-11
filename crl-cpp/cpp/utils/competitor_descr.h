@@ -30,9 +30,52 @@
 
 #include "./scores.h"
 
+#include "../commons/types.h"
+
 
 namespace crl
 {
+    /**
+    * This file defines next classes:
+    * 
+    * - struct CompetitorTeamDescr;
+    * - template<crl::score ScoreT>
+    *   struct CompetitorDescr : ScoreT;
+    * - using PointsCompetitorDescr = CompetitorDescr<crl::PointsScore>;
+    */
+
+    //=====   Competitor + Team Descr   =======================
+    struct CompetitorTeamDescr
+    {
+        crl::Bib competitor_id{};
+        crl::Bib team_id{};
+
+        explicit inline CompetitorTeamDescr(const crl::Bib competitor_id, const crl::Bib team_id) noexcept
+            : competitor_id{ competitor_id }
+            , team_id{ team_id }
+        {}
+
+        inline CompetitorTeamDescr(const int competitor_id, const int team_id) noexcept
+            : competitor_id{ static_cast<crl::Bib>(competitor_id) }
+            , team_id{ static_cast<crl::Bib>(team_id) }
+        {}
+
+        CompetitorTeamDescr() noexcept = default;
+        CompetitorTeamDescr(const CompetitorTeamDescr&) noexcept = default;
+        CompetitorTeamDescr(CompetitorTeamDescr&&) noexcept = default;
+        CompetitorTeamDescr& operator= (const CompetitorTeamDescr&) noexcept = default;
+        CompetitorTeamDescr& operator= (CompetitorTeamDescr&&) noexcept = default;
+
+        virtual ~CompetitorTeamDescr() noexcept = default;
+
+        const bool same_team(const CompetitorTeamDescr& other) const noexcept
+        {
+            return team_id == other.team_id;
+        }
+
+    };
+
+
     //=====   Competitor Descr   ==============================
     template<crl::score ScoreT>
     struct CompetitorDescr : ScoreT

@@ -17,6 +17,9 @@ int main()
 {
     crl::Rand rnd1{ 0xabcd'1230'4560'7890 };
 
+    crl::FullyRandomTeamsBestDispatchHeatsComposition<> heats_best_dsiaptch{ rnd1 };
+
+    /** /
     crl::FullyRandomHeatsComposition<crl::RiderId> heats1{ rnd1, {1, 2, 3, 4, 5, 6, 7} };
     crl::FullyRandomHeatsComposition<crl::RiderId>::heats_list_type heats1_compos{ heats1.compose_heats(2) };
 
@@ -36,6 +39,7 @@ int main()
 
     crl::Finals_12_34_Composition<Perf> heats3{ std::vector<Perf>{ Perf{1, 123}, Perf{4, 16}, Perf{5, 25} } };  //competitors2 };
     crl::Finals_12_34_Composition<Perf>::heats_list_type heats3_compos{ heats3.compose_finals() };
+    /**/
 
     /** /
     crl::AverageSpeed avg{205, crl::HMSTime(5, 15, 29)};

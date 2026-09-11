@@ -34,6 +34,29 @@
 
 namespace crl
 {
+    /**
+    * This file defines next classes:
+    * 
+    * - template<typename CompetitorT = crl::Bib>
+    *   class HeatsCompositionBase;
+    * 
+    * - template<typename CompetitorT = crl::Bib>
+    *   struct FullyRandomHeatsComposition : public HeatsCompositionBase<CompetitorT>;
+    *
+    * - template<typename CompetitorT = crl::Bib>
+    *   using TeamComposition = std::vector<CompetitorT>;
+    *
+    * - template<typename CompetitorT = crl::Bib>
+    *   struct FullyRandomTeamsBestDispatchHeatsComposition : public HeatsCompositionBase<CompetitorT>;
+    *
+    * - template<typename CompetitorT = crl::Bib>
+    *   struct FrwdBkwdHeatsComposition : public HeatsCompositionBase<CompetitorT>;
+    * 
+    * - template<typename CompetitorT>
+    *   struct Finals_12_34_Composition : public HeatsCompositionBase<CompetitorT>;
+    */
+
+
     //=====   Heats Compositing Base Class   ==================
     template<typename CompetitorT = crl::Bib>
     class HeatsCompositionBase
@@ -77,20 +100,6 @@ namespace crl
         HeatsCompositionBase& operator=(HeatsCompositionBase&&) = default;
 
 
-        //-----   Operations   --------------------------------
-        virtual heats_list_type compose_n_heats(
-            const unsigned int heats_nb
-        ) {
-            throw std::exception("method 'compose_n_heats(const unsigned int heats_nb)' is not implemented.");
-        }
-
-        virtual heats_list_type compose_heats(
-            const unsigned int competitors_min_count  // The min number of competitors per heat
-        ) {
-            throw std::exception("method 'compose_heats(const unsigned int competitors_min_count)' is not implemented.");
-        }
-
-
     protected:
         competitors_list_type _competitors_list{};
         crl::Rand*            _rand_ptr{ nullptr };
@@ -132,11 +141,55 @@ namespace crl
         //-----   Operations   --------------------------------
         heats_list_type compose_n_heats(
             const unsigned int heats_nb
-        ) noexcept override;
+        ) noexcept;
 
         heats_list_type compose_heats(
             const unsigned int competitors_min_count  // The min number of competitors per heat
-        ) noexcept override;
+        ) noexcept;
+
+    };
+
+
+    //=====   Fully Random Teams Best Dispatch Heats Compositing Class   ==========
+    //---------------------------------------------------------
+    template<typename CompetitorT = crl::Bib>
+    using TeamComposition = std::vector<CompetitorT>;
+
+    //---------------------------------------------------------
+    template<typename CompetitorT = crl::Bib>
+    struct FullyRandomTeamsBestDispatchHeatsComposition : public HeatsCompositionBase<CompetitorT>
+    {
+        using MyBaseClass = HeatsCompositionBase<CompetitorT>;
+        using competitors_list_type = MyBaseClass::competitors_list_type;
+        using heats_list_type = MyBaseClass::heats_list_type;
+
+        //-----   Constructors / Destructor   -----------------
+        FullyRandomTeamsBestDispatchHeatsComposition(
+            Rand& rand
+        ) noexcept;
+
+        FullyRandomTeamsBestDispatchHeatsComposition(
+            Rand& rand,
+            const std::vector<TeamComposition<CompetitorT>>& teams_compositions
+        ) noexcept;
+
+        FullyRandomTeamsBestDispatchHeatsComposition() noexcept = default;
+        FullyRandomTeamsBestDispatchHeatsComposition(const FullyRandomTeamsBestDispatchHeatsComposition&) noexcept = default;
+        FullyRandomTeamsBestDispatchHeatsComposition(FullyRandomTeamsBestDispatchHeatsComposition&&) noexcept = default;
+        FullyRandomTeamsBestDispatchHeatsComposition& operator= (const FullyRandomTeamsBestDispatchHeatsComposition&) noexcept = default;
+        FullyRandomTeamsBestDispatchHeatsComposition& operator= (FullyRandomTeamsBestDispatchHeatsComposition&&) noexcept = default;
+
+        virtual ~FullyRandomTeamsBestDispatchHeatsComposition() noexcept = default;
+
+
+        //-----   Operations   --------------------------------
+        heats_list_type compose_n_heats(
+            const unsigned int heats_nb
+        ) noexcept;
+
+        heats_list_type compose_heats(
+            const unsigned int competitors_min_count  // The min number of competitors per heat
+        ) noexcept;
 
     };
 
@@ -169,11 +222,11 @@ namespace crl
         //-----   Operations   --------------------------------
         heats_list_type compose_n_heats(
             const unsigned int heats_nb
-        ) noexcept override;
+        ) noexcept;
 
         heats_list_type compose_heats(
             const unsigned int competitors_count
-        ) noexcept override;
+        ) noexcept;
 
         heats_list_type compose_heats(
             const unsigned int competitors_count,
@@ -210,6 +263,7 @@ namespace crl
 
         //-----   Operations   --------------------------------
         heats_list_type compose_finals() noexcept;
+
     };
 
 }
@@ -226,7 +280,6 @@ namespace crl
     ) noexcept
     {
         const unsigned int competitors_min_count{ static_cast<unsigned int>(this->_competitors_list.size()) / heats_nb };
-
         return compose_heats(competitors_min_count);
     }
 
@@ -254,6 +307,60 @@ namespace crl
 
         return heats_list;
     }
+
+
+    //=====   Fully Random Teams Best Dispatch Heats Compositing Class   ==========
+    //---------------------------------------------------------
+    template<typename CompetitorT>
+    FullyRandomTeamsBestDispatchHeatsComposition<CompetitorT>::FullyRandomTeamsBestDispatchHeatsComposition(
+        Rand& rand
+    ) noexcept
+        : MyBaseClass{ rand }
+    {}
+
+    //---------------------------------------------------------
+    template<typename CompetitorT>
+    FullyRandomTeamsBestDispatchHeatsComposition<CompetitorT>::FullyRandomTeamsBestDispatchHeatsComposition(
+        Rand& rand,
+        const std::vector<TeamComposition<CompetitorT>>& teams_compositions
+    ) noexcept
+        : MyBaseClass{ rand }
+    {
+        this->_competitors_list.clear();
+
+        for (auto& team_compo : teams_compositions)
+            this->_competitors_list.insert_range(  // Notice: c++23 method
+                this->_competitors_list.end(),
+                team_compo
+            );
+            //for (auto& comp : team_compo)
+            //    _competitors_list.push_back(comp);
+    }
+
+    //---------------------------------------------------------
+    template<typename CompetitorT>
+    FullyRandomTeamsBestDispatchHeatsComposition<CompetitorT>::heats_list_type
+        FullyRandomTeamsBestDispatchHeatsComposition<CompetitorT>::compose_n_heats(
+            const unsigned int heats_nb
+        ) noexcept
+    {
+        heats_list_type heats_list;
+
+        return heats_list;
+    }
+
+    //---------------------------------------------------------
+    template<typename CompetitorT>
+    FullyRandomTeamsBestDispatchHeatsComposition<CompetitorT>::heats_list_type
+        FullyRandomTeamsBestDispatchHeatsComposition<CompetitorT>::compose_heats(
+            const unsigned int competitors_min_count  // The min number of competitors per heat
+        ) noexcept
+    {
+        heats_list_type heats_list;
+
+        return heats_list;
+    }
+
 
     //=====   Forward/Backward Heats Compositing Base Class   =====
     //---------------------------------------------------------
