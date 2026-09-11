@@ -25,11 +25,12 @@
 */
 
 #include <algorithm>
-#include <exception>
 #include <vector>
 
+#include "./utils/competitor_descr.h"
+#include "./utils/random.h"
+
 #include "../commons/types.h"
-#include "../utils/random.h"
 
 
 namespace crl
@@ -152,24 +153,24 @@ namespace crl
 
     //=====   Fully Random Teams Best Dispatch Heats Compositing Class   ==========
     //---------------------------------------------------------
-    template<typename CompetitorT = crl::Bib>
+    template<typename TeamIdT = crl::Bib, typename CompetitorT = crl::Bib>
     struct TeamComposition
     {
-        crl::Bib                 team_id;
+        TeamIdT                  team_id;
         std::vector<CompetitorT> team_composition;
     };
 
 
     //---------------------------------------------------------
-    template<typename CompetitorT = crl::Bib>
-    using TeamsCompositionsList = std::vector<TeamComposition<CompetitorT>>;
+    template<typename TeamIdT = crl::Bib, typename CompetitorT = crl::Bib>
+    using TeamsCompositionsList = std::vector<TeamComposition<TeamIdT, CompetitorT>>;
 
 
     //---------------------------------------------------------
-    template<typename CompetitorT = crl::Bib>
-    struct FullyRandomTeamsBestDispatchHeatsComposition : public HeatsCompositionBase<CompetitorT>
+    template<typename TeamIdT = crl::Bib, typename CompetitorT = crl::Bib>
+    struct FullyRandomTeamsBestDispatchHeatsComposition : public HeatsCompositionBase<crl::CompetitorTeamDescr<CompetitorT>>
     {
-        using MyBaseClass = HeatsCompositionBase<CompetitorT>;
+        using MyBaseClass = HeatsCompositionBase<crl::CompetitorTeamDescr<CompetitorT>>;
         using competitors_list_type = MyBaseClass::competitors_list_type;
         using heats_list_type = MyBaseClass::heats_list_type;
 
@@ -180,7 +181,7 @@ namespace crl
 
         FullyRandomTeamsBestDispatchHeatsComposition(
             Rand& rand,
-            const TeamsCompositionsList<CompetitorT>& teams_compositions
+            const TeamsCompositionsList<TeamIdT, CompetitorT>& teams_compositions
         ) noexcept;
 
         FullyRandomTeamsBestDispatchHeatsComposition() noexcept = default;
@@ -321,50 +322,46 @@ namespace crl
 
     //=====   Fully Random Teams Best Dispatch Heats Compositing Class   ==========
     //---------------------------------------------------------
-    template<typename CompetitorT>
-    FullyRandomTeamsBestDispatchHeatsComposition<CompetitorT>::FullyRandomTeamsBestDispatchHeatsComposition(
+    template<typename TeamIdT, typename CompetitorT>
+    FullyRandomTeamsBestDispatchHeatsComposition<TeamIdT, CompetitorT>::FullyRandomTeamsBestDispatchHeatsComposition(
         Rand& rand
     ) noexcept
         : MyBaseClass{ rand }
     {}
 
     //---------------------------------------------------------
-    template<typename CompetitorT>
-    FullyRandomTeamsBestDispatchHeatsComposition<CompetitorT>::FullyRandomTeamsBestDispatchHeatsComposition(
+    template<typename TeamIdT, typename CompetitorT>
+    FullyRandomTeamsBestDispatchHeatsComposition<TeamIdT, CompetitorT>::FullyRandomTeamsBestDispatchHeatsComposition(
         Rand& rand,
-        const TeamsCompositionsList<CompetitorT>& teams_compositions
+        const TeamsCompositionsList<TeamIdT, CompetitorT>& teams_compositions
     ) noexcept
         : MyBaseClass{ rand }
     {
         this->_competitors_list.clear();
 
         for (auto& team_compo : teams_compositions)
-            this->_competitors_list.insert_range(  // Notice: c++23 method
-                this->_competitors_list.end(),
-                team_compo
-            );
-            // Notice: c++11 below
-            // for (auto& comp : team_compo)
-            //    this->_competitors_list.push_back(comp);
+            for (auto& comp : team_compo.team_composition)
+               this->_competitors_list.emplace_back(team_compo.team_id, comp);
     }
 
     //---------------------------------------------------------
-    template<typename CompetitorT>
-    FullyRandomTeamsBestDispatchHeatsComposition<CompetitorT>::heats_list_type
-        FullyRandomTeamsBestDispatchHeatsComposition<CompetitorT>::compose_n_heats(
+    template<typename TeamIdT, typename CompetitorT>
+    FullyRandomTeamsBestDispatchHeatsComposition<TeamIdT, CompetitorT>::heats_list_type
+        FullyRandomTeamsBestDispatchHeatsComposition<TeamIdT, CompetitorT>::compose_n_heats(
             const unsigned int heats_nb
         ) noexcept
     {
         heats_list_type heats_list{};
 
+        this->_rand_ptr->shuffle(this->_competitors_list);
 
         return heats_list;
     }
 
     //---------------------------------------------------------
-    template<typename CompetitorT>
-    FullyRandomTeamsBestDispatchHeatsComposition<CompetitorT>::heats_list_type
-        FullyRandomTeamsBestDispatchHeatsComposition<CompetitorT>::compose_heats(
+    template<typename TeamIdT, typename CompetitorT>
+    FullyRandomTeamsBestDispatchHeatsComposition<TeamIdT, CompetitorT>::heats_list_type
+        FullyRandomTeamsBestDispatchHeatsComposition<TeamIdT, CompetitorT>::compose_heats(
             const unsigned int competitors_min_count  // The min number of competitors per heat
         ) noexcept
     {

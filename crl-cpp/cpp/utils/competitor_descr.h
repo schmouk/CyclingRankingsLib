@@ -45,19 +45,15 @@ namespace crl
     */
 
     //=====   Competitor + Team Descr   =======================
+    template<typename TeamIdT = int, typename CompetitorIdT = int>
     struct CompetitorTeamDescr
     {
-        crl::Bib competitor_id{};
-        crl::Bib team_id{};
+        CompetitorIdT competitor_id{};
+        TeamIdT       team_id{};
 
-        explicit inline CompetitorTeamDescr(const crl::Bib competitor_id, const crl::Bib team_id) noexcept
-            : competitor_id{ competitor_id }
-            , team_id{ team_id }
-        {}
-
-        inline CompetitorTeamDescr(const int competitor_id, const int team_id) noexcept
-            : competitor_id{ static_cast<crl::Bib>(competitor_id) }
-            , team_id{ static_cast<crl::Bib>(team_id) }
+        explicit inline CompetitorTeamDescr(const TeamIdT team_id, const CompetitorIdT competitor_id) noexcept
+            : team_id{ team_id }
+            , competitor_id{ competitor_id } 
         {}
 
         CompetitorTeamDescr() noexcept = default;

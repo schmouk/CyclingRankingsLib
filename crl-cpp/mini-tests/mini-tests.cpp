@@ -17,7 +17,16 @@ int main()
 {
     crl::Rand rnd1{ 0xabcd'1230'4560'7890 };
 
-    crl::FullyRandomTeamsBestDispatchHeatsComposition<> heats_best_dsiaptch{ rnd1 };
+    crl::TeamsCompositionsList<int, int> teams_compos{
+        {1, {1, 2, 3}},
+        {2, {11, 12, 13, 14}},
+        {3, {21, 22, 23, 24, 25, 26}}
+    };
+    crl::FullyRandomTeamsBestDispatchHeatsComposition<int, int> heats_best_dispatch{
+        rnd1,
+        teams_compos
+    };
+    auto heats_best_dispatch_compos{ heats_best_dispatch.compose_n_heats(3) };
 
     /** /
     crl::FullyRandomHeatsComposition<crl::RiderId> heats1{ rnd1, {1, 2, 3, 4, 5, 6, 7} };
