@@ -25,6 +25,8 @@
 */
 
 #include <algorithm>
+#include <set>
+#include <utility>
 #include <vector>
 
 #include "./utils/competitor_descr.h"
@@ -168,8 +170,9 @@ namespace crl
 
     //---------------------------------------------------------
     template<typename TeamIdT = crl::Bib, typename CompetitorT = crl::Bib>
-    struct FullyRandomTeamsBestDispatchHeatsComposition : public HeatsCompositionBase<crl::CompetitorTeamDescr<CompetitorT>>
+    class FullyRandomTeamsBestDispatchHeatsComposition : public HeatsCompositionBase<crl::CompetitorTeamDescr<CompetitorT>>
     {
+    public:
         using MyBaseClass = HeatsCompositionBase<crl::CompetitorTeamDescr<CompetitorT>>;
         using competitors_list_type = MyBaseClass::competitors_list_type;
         using heats_list_type = MyBaseClass::heats_list_type;
@@ -201,6 +204,10 @@ namespace crl
         heats_list_type compose_heats(
             const unsigned int competitors_min_count  // The min number of competitors per heat
         ) noexcept;
+
+
+    private:
+        std::set<TeamIdT> _teams_ids{};
 
     };
 
@@ -339,9 +346,12 @@ namespace crl
     {
         this->_competitors_list.clear();
 
-        for (auto& team_compo : teams_compositions)
+        for (auto& team_compo : teams_compositions) {
+            this->_teams_ids.insert(team_compo.team_id);
+
             for (auto& comp : team_compo.team_composition)
-               this->_competitors_list.emplace_back(team_compo.team_id, comp);
+                this->_competitors_list.emplace_back(team_compo.team_id, comp);
+        }
     }
 
     //---------------------------------------------------------
@@ -351,10 +361,120 @@ namespace crl
             const unsigned int heats_nb
         ) noexcept
     {
-        heats_list_type heats_list{};
+        heats_list_type                heats_list{};
+        std::vector<std::set<TeamIdT>> heats_teams_ids{};  // the sets of id teams currently allowed for every heat
 
+        // Checks edge cases
+        if (heats_nb == 0)
+            return heats_list;
+        if (heats_nb > this->_competitors_list.size())
+            return compose_n_heats(static_cast<unsigned int>(this->_competitors_list.size()));
+        
+        // Prepares the allowed teams ids allowed for every heat
+        heats_teams_ids.resize(heats_nb, this->_teams_ids);
+        auto fwd_heats_teams_it{ heats_teams_ids.begin() };
+        auto bwd_heats_teams_it{ heats_teams_ids.rbegin() };
+
+        // Shuffles the list of competitors
         this->_rand_ptr->shuffle(this->_competitors_list);
+        // and Prepares the running iterators on the competitors list
+        auto first_comp_it{ this->_competitors_list.begin() };
+        auto end_comp_it{ this->_competitors_list.end() };
+        auto current_comp_it{ this->_competitors_list.begin() };
 
+        // Prepares the heats list to be finally returned
+        heats_list.resize(heats_nb);
+        auto fwd_heats_it{ heats_list.begin() };
+        auto bwd_heats_it{ heats_list.rbegin() };
+
+        // Runs through the competitors shuffled list
+        while (first_comp_it != end_comp_it) {
+            const TeamIdT comp_team_id{ first_comp_it->team_id };
+
+            if (fwd_heats_it != heats_list.end()) {
+                // Runs through heats in a forward walk-through
+                if (fwd_heats_teams_it->find(comp_team_id) != fwd_heats_teams_it->end()) {
+                    // Appends the first competitor in list into this heat
+                    fwd_heats_it->push_back(*first_comp_it);
+
+                    fwd_heats_teams_it->erase(comp_team_id);
+                    if (fwd_heats_teams_it->empty())
+                        *fwd_heats_teams_it = this->_teams_ids;
+
+                    ++first_comp_it;
+                    ++fwd_heats_it;
+                    ++fwd_heats_teams_it;
+                }
+                else {
+                    // Searches for a competitor with a team_id compatible with current heat
+                    current_comp_it = first_comp_it + 1;
+                    while (current_comp_it != end_comp_it) {
+                        std::swap(*first_comp_it, *current_comp_it);
+                        if (fwd_heats_teams_it->find(first_comp_it->team_id) != fwd_heats_teams_it->end())
+                            break;
+                        else
+                            ++current_comp_it;
+                    }
+                    // Ok, whatever the above computation result
+                    // Appends the currently first competitor in list into this heat
+                    fwd_heats_it->push_back(*first_comp_it);
+
+                    fwd_heats_teams_it->erase(first_comp_it->team_id);
+                    if (fwd_heats_teams_it->empty())
+                        *fwd_heats_teams_it = this->_teams_ids;
+
+                    ++first_comp_it;
+                    ++fwd_heats_it;
+                    ++fwd_heats_teams_it;
+                }
+            }
+            else if (bwd_heats_it != heats_list.rend()) {
+                // Runs through heats in a forward walk-through
+                if (bwd_heats_teams_it->find(comp_team_id) != bwd_heats_teams_it->end()) {
+                    // Appends the first competitor in list into this heat
+                    bwd_heats_it->push_back(*first_comp_it);
+
+                    bwd_heats_teams_it->erase(comp_team_id);
+                    if (bwd_heats_teams_it->empty())
+                        *bwd_heats_teams_it = this->_teams_ids;
+
+                    ++first_comp_it;
+                    ++bwd_heats_it;
+                    ++bwd_heats_teams_it;
+                }
+                else {
+                    // Searches for a competitor with a team_id compatible with current heat
+                    current_comp_it = first_comp_it + 1;
+                    while (current_comp_it != end_comp_it) {
+                        std::swap(*first_comp_it, *current_comp_it);
+                        if (bwd_heats_teams_it->find(first_comp_it->team_id) != bwd_heats_teams_it->end())
+                            break;
+                        else
+                            ++current_comp_it;
+                    }
+                    // Ok, whatever the above computation result
+                    // Appends the currently first competitor in list into this heat
+                    bwd_heats_it->push_back(*first_comp_it);
+
+                    bwd_heats_teams_it->erase(first_comp_it->team_id);
+                    if (bwd_heats_teams_it->empty())
+                        *bwd_heats_teams_it = this->_teams_ids;
+
+                    ++first_comp_it;
+                    ++bwd_heats_it;
+                    ++bwd_heats_teams_it;
+                }
+            }
+            else {
+                // Resets the run to a forward walk-through
+                fwd_heats_it = heats_list.begin();
+                bwd_heats_it = heats_list.rbegin();
+                fwd_heats_teams_it = heats_teams_ids.begin();
+                bwd_heats_teams_it = heats_teams_ids.rbegin();
+            }
+        }
+
+        // Ok, heats compositions are now known
         return heats_list;
     }
 
