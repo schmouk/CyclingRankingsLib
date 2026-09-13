@@ -207,8 +207,9 @@ namespace crl
 
 
     private:
-        std::set<TeamIdT> _teams_ids{};
-
+        std::set<TeamIdT>                           _teams_ids{};
+        TeamsCompositionsList<TeamIdT, CompetitorT> _teams_compositions{};
+        std::size_t                                 _competitors_count{ 0 };
     };
 
 
@@ -343,14 +344,15 @@ namespace crl
         const TeamsCompositionsList<TeamIdT, CompetitorT>& teams_compositions
     ) noexcept
         : MyBaseClass{ rand }
+        , _teams_compositions{ teams_compositions }
     {
         this->_competitors_list.clear();
 
-        for (auto& team_compo : teams_compositions) {
-            this->_teams_ids.insert(team_compo.team_id);
+        for (auto& team_compo : _teams_compositions) {
+            _competitors_count += team_compo.team_composition.size();
 
-            for (auto& comp : team_compo.team_composition)
-                this->_competitors_list.emplace_back(team_compo.team_id, comp);
+            this->_teams_ids.insert(team_compo.team_id);
+            this->_rand_ptr->shuffle(team_compo.team_composition);
         }
     }
 
@@ -367,23 +369,46 @@ namespace crl
         // Checks edge cases
         if (heats_nb == 0)
             return heats_list;
-        if (heats_nb > this->_competitors_list.size())
-            return compose_n_heats(static_cast<unsigned int>(this->_competitors_list.size()));
+        if (heats_nb > this->_competitors_count)
+            return compose_n_heats(static_cast<unsigned int>(this->_competitors_count));
         
         // Prepares the allowed teams ids allowed for every heat
         heats_teams_ids.resize(heats_nb, this->_teams_ids);
         auto bwd_heats_teams_it{ heats_teams_ids.rbegin() };
 
-        // Shuffles the list of competitors
-        this->_rand_ptr->shuffle(this->_competitors_list);
-        // and Prepares the running iterators on the competitors list
-        auto first_comp_it{ this->_competitors_list.begin() };
-        auto end_comp_it{ this->_competitors_list.end() };
-        auto current_comp_it{ this->_competitors_list.begin() };
-
         // Prepares the heats list to be finally returned
         heats_list.resize(heats_nb);
         auto bwd_heats_it{ heats_list.rbegin() };
+
+        // First, allocate in each heat a uniform count of competitors of big teams
+        for (auto& team_compo : this->_teams_compositions) {
+            const std::size_t team_competitors_count{ team_compo.team_composition.size() };
+
+            if (team_competitors_count  >= heats_nb) {
+                for (auto& heat : heats_list) {
+                    std::size_t nb_comp_per_heat{ team_competitors_count / heats_nb };
+
+                    while (nb_comp_per_heat) {
+                        heat.emplace_back(team_compo.team_id, team_compo.team_composition.back());
+                        team_compo.team_composition.pop_back();
+                        --nb_comp_per_heat;
+                    }
+                }
+            }
+        }
+
+        // Then, create the list with remaining competitors
+        for (auto& team_compo : this->_teams_compositions) {
+            for (auto& comp : team_compo.team_composition)
+                this->_competitors_list.emplace_back(team_compo.team_id, comp);
+        }
+
+        // Shuffles this list of competitors
+        this->_rand_ptr->shuffle(this->_competitors_list);
+        // and Prepares the running iterators on this competitors list
+        auto first_comp_it{ this->_competitors_list.begin() };
+        auto end_comp_it{ this->_competitors_list.end() };
+        auto current_comp_it{ this->_competitors_list.begin() };
 
         // Runs through the competitors shuffled list
         while (first_comp_it != end_comp_it) {
@@ -432,6 +457,10 @@ namespace crl
                 bwd_heats_teams_it = heats_teams_ids.rbegin();
             }
         }
+
+        // Final shuffling of every heat
+        for (auto& heat : heats_list)
+            this->_rand_ptr->shuffle(heat);
 
         // Ok, heats compositions are now known
         return heats_list;
@@ -525,12 +554,13 @@ namespace crl
     {
         const std::size_t competitors_count{ std::min<std::size_t>(4, this->_competitors_list.size()) };
 
-        if (competitors_count > 1)
+        if (competitors_count > 1) {
             std::partial_sort(
                 this->_competitors_list.begin(),
                 this->_competitors_list.begin() + competitors_count,
                 this->_competitors_list.end()
             );
+        }
 
         switch (competitors_count) {
         case 0:
