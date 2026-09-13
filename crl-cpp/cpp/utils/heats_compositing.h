@@ -372,7 +372,6 @@ namespace crl
         
         // Prepares the allowed teams ids allowed for every heat
         heats_teams_ids.resize(heats_nb, this->_teams_ids);
-        auto fwd_heats_teams_it{ heats_teams_ids.begin() };
         auto bwd_heats_teams_it{ heats_teams_ids.rbegin() };
 
         // Shuffles the list of competitors
@@ -384,51 +383,13 @@ namespace crl
 
         // Prepares the heats list to be finally returned
         heats_list.resize(heats_nb);
-        auto fwd_heats_it{ heats_list.begin() };
         auto bwd_heats_it{ heats_list.rbegin() };
 
         // Runs through the competitors shuffled list
         while (first_comp_it != end_comp_it) {
             const TeamIdT comp_team_id{ first_comp_it->team_id };
 
-            if (fwd_heats_it != heats_list.end()) {
-                // Runs through heats in a forward walk-through
-                if (fwd_heats_teams_it->find(comp_team_id) != fwd_heats_teams_it->end()) {
-                    // Appends the first competitor in list into this heat
-                    fwd_heats_it->push_back(*first_comp_it);
-
-                    fwd_heats_teams_it->erase(comp_team_id);
-                    if (fwd_heats_teams_it->empty())
-                        *fwd_heats_teams_it = this->_teams_ids;
-
-                    ++first_comp_it;
-                    ++fwd_heats_it;
-                    ++fwd_heats_teams_it;
-                }
-                else {
-                    // Searches for a competitor with a team_id compatible with current heat
-                    current_comp_it = first_comp_it + 1;
-                    while (current_comp_it != end_comp_it) {
-                        std::swap(*first_comp_it, *current_comp_it);
-                        if (fwd_heats_teams_it->find(first_comp_it->team_id) != fwd_heats_teams_it->end())
-                            break;
-                        else
-                            ++current_comp_it;
-                    }
-                    // Ok, whatever the above computation result
-                    // Appends the currently first competitor in list into this heat
-                    fwd_heats_it->push_back(*first_comp_it);
-
-                    fwd_heats_teams_it->erase(first_comp_it->team_id);
-                    if (fwd_heats_teams_it->empty())
-                        *fwd_heats_teams_it = this->_teams_ids;
-
-                    ++first_comp_it;
-                    ++fwd_heats_it;
-                    ++fwd_heats_teams_it;
-                }
-            }
-            else if (bwd_heats_it != heats_list.rend()) {
+            if (bwd_heats_it != heats_list.rend()) {
                 // Runs through heats in a forward walk-through
                 if (bwd_heats_teams_it->find(comp_team_id) != bwd_heats_teams_it->end()) {
                     // Appends the first competitor in list into this heat
@@ -467,9 +428,7 @@ namespace crl
             }
             else {
                 // Resets the run to a forward walk-through
-                fwd_heats_it = heats_list.begin();
                 bwd_heats_it = heats_list.rbegin();
-                fwd_heats_teams_it = heats_teams_ids.begin();
                 bwd_heats_teams_it = heats_teams_ids.rbegin();
             }
         }
